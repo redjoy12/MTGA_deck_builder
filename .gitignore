@@ -1,0 +1,26 @@
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Database
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Virtual environment
+venv/
