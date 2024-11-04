@@ -1,0 +1,23 @@
+# Core Framework
+fastapi
+uvicorn
+
+# AI/ML Libraries
+langchain
+langgraph
+langchain-community
+langsmith
+
+# Database
+sqlalchemy==2.0.27
+alembic==1.13.1
+psycopg2-binary==2.9.9
+redis==5.0.1
+chromadb
+
+# Utils
+python-dotenv==1.0.1
+pydantic==2.6.1
+python-jose==3.3.0
+passlib==1.7.4
+python-multipart==0.0.6
