@@ -1,12 +1,14 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-from logging.config import fileConfig
 import logging
-from sqlalchemy import engine_from_config, pool
+import os
+import sys
+from logging.config import fileConfig
+
 from alembic import context
-from app.models.card import Base
 from app.core.config import settings
+from app.models.card import Base
+from sqlalchemy import engine_from_config, pool
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 # Alembic Config object, giving access to the .ini configuration file
 config = context.config
@@ -30,6 +32,7 @@ else:
 # Link Alembic's metadata with the application's models
 target_metadata = Base.metadata
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -42,6 +45,7 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
@@ -59,6 +63,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
