@@ -1,21 +1,25 @@
-from pydantic_settings import BaseSettings
+import os
+import sys
 from functools import lru_cache
 from typing import Optional
-import os, sys
+
+from pydantic_settings import BaseSettings
+
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MTGA AI Deck Builder"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-    
+
     # Database settings
     POSTGRES_SERVER: str = ""
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
     POSTGRES_PORT: str = ""
-    
+
     # Additional settings that were causing validation errors
     API_VERSION: Optional[str] = "v1"
     DEBUG: bool = True
@@ -38,8 +42,10 @@ class Settings(BaseSettings):
         case_sensitive = True
         extra = "allow"  # This allows extra fields from the environment
 
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
 
 settings = get_settings()
+print(settings.get_database_url)
