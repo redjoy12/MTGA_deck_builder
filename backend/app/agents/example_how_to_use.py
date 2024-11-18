@@ -11,6 +11,8 @@ from backend.app.models.schemas import DeckRequirements
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
+from backend.app.core.config import settings
+
 # Main Workflow
 def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
     workflow = StateGraph(AgentState)
@@ -34,11 +36,11 @@ def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
 # Example usage with additional features
 async def build_deck(requirements: str):
     llm = ChatGroq(
-        model="gpt-4-turbo-preview",
-        temperature=0.7,
+        model="llama-3.1-70b-versatile",
+        temperature=0,
         streaming=True
     )
-    db = CardDatabase("postgresql://user:password@localhost:5432/mtga")
+    db = CardDatabase(settings.get_database_url)
     
     # Parse requirements
     reqs = json.loads(requirements)
