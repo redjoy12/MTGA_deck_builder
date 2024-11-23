@@ -1,0 +1,38 @@
+// card-preview.component.scss
+.card-preview {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  
+    &:hover {
+      transform: scale(1.05);
+    }
+  
+    ::ng-deep {
+      .p-card {
+        background-color: var(--background-primary);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        
+        .p-card-header {
+          background-color: var(--background-secondary);
+          color: var(--accent-color);
+        }
+        
+        .p-card-content {
+          color: var(--text-secondary);
+        }
+      }
+      
+      .p-dialog {
+        .p-dialog-header {
+          background-color: var(--background-secondary);
+          color: var(--accent-color);
+        }
+        
+        .p-dialog-content {
+          background-color: var(--background-primary);
+           color: var(--text-primary);
+        }
+      }
+    }
+}

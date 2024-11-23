@@ -1,0 +1,12 @@
+<!-- color-filter.component.html -->
+<p-card header="Color Filter">
+    <div class="color-filter">
+      <p-multiSelect 
+        [options]="colors" 
+        [(ngModel)]="selectedColors" 
+        [placeholder]="'Select Colors'" 
+        (onChange)="applyFilter()">
+      </p-multiSelect>
+      <p-button label="Apply Filter" (click)="applyFilter()"></p-button>
+    </div>
+  </p-card>

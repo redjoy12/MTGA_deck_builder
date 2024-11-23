@@ -1,0 +1,54 @@
+// color-filter.component.scss
+.color-filter {
+    background-color: var(--background-secondary);
+    border-radius: 10px;
+    padding: 20px;
+  
+    ::ng-deep {
+      .p-multiselect {
+        width: 100%;
+        margin-bottom: 15px;
+        
+        .p-multiselect-label {
+          background-color: var(--background-primary);
+          color: var(--text-primary);
+        }
+        
+        .p-multiselect-trigger {
+          background-color: var(--background-primary);
+          color: var(--accent-color);
+        }
+      }
+      
+      .p-button {
+        background-color: var(--accent-color);
+        border: none;
+        width: 100%;
+        
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+  
+    .color-options {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      
+      .color-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        
+        &.selected {
+          border-color: var(--accent-color);
+        }
+        
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+    }
+}

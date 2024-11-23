@@ -1,0 +1,77 @@
+// deck-preview.component.scss
+.deck-preview {
+  background-color: var(--background-secondary);
+  border-radius: 10px;
+  padding: 20px;
+  
+  .deck-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    
+    .deck-info, .deck-statistics {
+      background-color: var(--background-primary);
+      padding: 15px;
+      border-radius: 8px;
+      width: 48%;
+      
+      h3, h4 {
+        color: var(--accent-color);
+        margin-bottom: 10px;
+      }
+    }
+  }
+  
+  .deck-breakdown {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+
+    .main-deck, .sideboard {
+      background-color: var(--background-primary);
+      border-radius: 8px;
+      padding: 15px;
+      width: 48%;
+
+      h3 {
+        color: var(--accent-color);
+        margin-bottom: 10px;
+      }
+
+      ::ng-deep .p-datatable {
+        width: 100%;
+        
+        .p-datatable-header {
+          background-color: var(--background-secondary);
+          color: var(--text-primary);
+        }
+        
+        .p-datatable-tbody > tr {
+          &:hover {
+            background-color: rgba(74, 144, 226, 0.1);
+          }
+        }
+      }
+    }
+  }
+
+  .deck-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+
+    .p-button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      
+      &.p-button-success {
+        background-color: var(--accent-color);
+      }
+      
+      &.p-button-secondary {
+        background-color: var(--background-primary);
+        color: var(--text-primary);
+      }
+    }
+  }
+}

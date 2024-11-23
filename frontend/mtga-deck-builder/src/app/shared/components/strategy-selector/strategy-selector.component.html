@@ -1,0 +1,24 @@
+<!-- strategy-selector.component.html -->
+<p-card header="Strategy Selector">
+  <div class="strategy-selector">
+    <div class="grid">
+      <div class="col-6" *ngFor="let strategy of strategies">
+        <p-card header="{{ strategy.name }}">
+          <p>{{ strategy.description }}</p>
+          <p-button label="View Details" (click)="showDetails(strategy)"></p-button>
+        </p-card>
+      </div>
+    </div>
+
+    <p-dialog header="Strategy Details" [(visible)]="displayDialog" [modal]="true" [closable]="true" (onHide)="closeDialog()">
+      <div *ngIf="selectedStrategy">
+        <h3>{{ selectedStrategy.name }}</h3>
+        <p>{{ selectedStrategy.description }}</p>
+        <h4>Details:</h4>
+        <ul>
+          <li *ngFor="let detail of selectedStrategy.details">{{ detail }}</li>
+        </ul>
+      </div>
+    </p-dialog>
+  </div>
+</p-card>
