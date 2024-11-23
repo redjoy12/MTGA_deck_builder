@@ -1,0 +1,57 @@
+// strategy-selector.component.scss
+.strategy-selector {
+  background-color: var(--background-secondary);
+  border-radius: 10px;
+  padding: 20px;
+
+  ::ng-deep {
+    .p-card {
+      margin-bottom: 15px;
+      
+      .p-card-header {
+        background-color: var(--background-primary);
+        color: var(--accent-color);
+      }
+      
+      .p-card-content {
+        background-color: var(--background-primary);
+        color: var(--text-secondary);
+      }
+    }
+    
+    .p-button {
+      background-color: var(--accent-color);
+      border: none;
+      
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+    
+    .p-dialog {
+      .p-dialog-header {
+        background-color: var(--background-secondary);
+        color: var(--accent-color);
+      }
+      
+      .p-dialog-content {
+        background-color: var(--background-primary);
+        color: var(--text-primary);
+      }
+    }
+  }
+
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+  }
+
+  .strategy-details {
+    ul {
+      list-style-type: disc;
+      padding-left: 20px;
+      color: var(--text-secondary);
+    }
+  }
+}

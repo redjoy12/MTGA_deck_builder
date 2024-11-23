@@ -1,0 +1,10 @@
+<!-- card-preview.component.html -->
+<p-card header="{{ card.name }}" (click)="showDialog()">
+    <p-image [src]="card.imageUrl" alt="{{ card.name }}" width="100%"></p-image>
+    <p>{{ card.description }}</p>
+  </p-card>
+  
+  <p-dialog header="{{ card.name }}" [(visible)]="displayDialog" [modal]="true" [closable]="true" (onHide)="closeDialog()">
+    <p-image [src]="card.imageUrl" alt="{{ card.name }}" width="100%"></p-image>
+    <p>{{ card.description }}</p>
+  </p-dialog>

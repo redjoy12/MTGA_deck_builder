@@ -1,0 +1,95 @@
+
+// Color Palette
+@import 'primeng/resources/themes/saga-blue/theme.css';
+@import 'primeng/resources/primeng.min.css';
+@import 'primeicons/primeicons.css';
+
+:root {
+    // MTG Color Palette
+    --color-white: #F0F0F0;
+    --color-blue: #0000FF;
+    --color-black: #000000;
+    --color-red: #FF0000;
+    --color-green: #00FF00;
+    
+    // Neutral Colors
+    --background-primary: #1E1E2C;
+    --background-secondary: #2A2A3E;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B0C0;
+    --accent-color: #4A90E2;
+    
+    // Card Colors
+    --mana-white: #F0F0F0;
+    --mana-blue: #0000FF;
+    --mana-black: #000000;
+    --mana-red: #FF0000;
+    --mana-green: #00FF00;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  // Global Button Styles
+  .btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &-primary {
+      background-color: var(--accent-color);
+      color: var(--text-primary);
+      
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+    
+    &-secondary {
+      background-color: var(--background-secondary);
+      color: var(--text-secondary);
+    }
+  }
+  
+  // Color Buttons
+  .color-btn {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    
+    &.white { background-color: var(--mana-white); }
+    &.blue { background-color: var(--mana-blue); }
+    &.black { background-color: var(--mana-black); color: white; }
+    &.red { background-color: var(--mana-red); }
+    &.green { background-color: var(--mana-green); }
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+    
+    &.selected {
+      border: 3px solid var(--accent-color);
+    }
+  }
