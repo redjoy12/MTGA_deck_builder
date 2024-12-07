@@ -1,0 +1,73 @@
+
+<div class="card-selector">
+  <h2>Select Your Cards</h2>
+  
+  <form [formGroup]="cardSearchForm" (ngSubmit)="searchCards()">
+    <div class="filters">
+      <!-- Search Input -->
+      <div class="search-input">
+        <label for="searchTerm">Search Cards</label>
+        <input 
+          type="text" 
+          id="searchTerm" 
+          formControlName="searchTerm" 
+          placeholder="Enter card name or type"
+          class="form-control"
+        >
+        <div *ngIf="f['searchTerm'].touched && f['searchTerm'].invalid" class="error-message">
+          <small *ngIf="f['searchTerm'].errors?.['required']">Search term is required</small>
+        </div>
+      </div>
+
+      <!-- Mana Cost Filter -->
+      <div class="mana-cost-filter">
+        <label for="manaCost">Mana Cost (Max)</label>
+        <input 
+          type="number" 
+          id="manaCost" 
+          formControlName="manaCost" 
+          placeholder="Enter max mana cost"
+          class="form-control"
+        >
+      </div>
+
+      <!-- Color Filter -->
+      <div class="color-filter">
+        <label>Select Colors:</label>
+        <div class="color-options">
+          <button 
+            *ngFor="let color of colorOptions" 
+            type="button"
+            class="color-btn {{ color.value }}"
+            [class.selected]="isColorSelected(color.value)"
+            (click)="toggleColor(color.value)"
+          >
+            {{ color.name }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Button -->
+    <button 
+      type="submit" 
+      class="search-btn"
+      [disabled]="cardSearchForm.invalid"
+    >
+      Search Cards
+    </button>
+  </form>
+
+  <!-- Card Results -->
+  <div class="card-results" *ngIf="cardResults.length > 0">
+    <div class="card-grid">
+      <div class="card-item" *ngFor="let card of cardResults">
+        <img [src]="card.imageUrl" alt="{{ card.name }}">
+        <div class="card-details">
+          <h4>{{ card.name }}</h4>
+          <button (click)="addCardToDeck(card)">Add to Deck</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

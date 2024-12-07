@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import { DeckCreatorComponent } from './features/deck-builder/components/deck-creator/deck-creator.component';
-import { CardSelectorComponent } from './features/deck-builder/components/card-selector/card-selector.component';
-import { DeckPreviewComponent } from './features/deck-builder/components/deck-preview/deck-preview.component';
-import { ResourceManagerComponent } from './features/deck-builder/components/resource-manager/resource-manager.component';
+import { DeckCreatorComponent } from './pages/deck-creator/deck-creator.component';
+import { CardSelectorComponent } from './pages/card-selector/card-selector.component';
+import { DeckPreviewComponent } from './pages/deck-preview/deck-preview.component';
+import { ResourceManagerComponent } from './pages/resource-manager/resource-manager.component';
 
 export const routes: Routes = [
   { 

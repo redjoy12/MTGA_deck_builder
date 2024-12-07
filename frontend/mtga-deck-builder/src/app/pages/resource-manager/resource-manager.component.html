@@ -1,0 +1,30 @@
+<!-- resource-manager.component.html -->
+<p-card header="Resource Management">
+  <div class="resource-manager">
+    <p-panel header="Wildcards">
+      <div class="grid">
+        <div class="col-3" *ngFor="let type of wildcardTypes">
+          <h3>{{ type | titlecase }}</h3>
+          <p-progressBar 
+            [value]="getWildcardProgressValue(type)"
+          ></p-progressBar>
+          <small>{{ wildcardData[type].current }}/{{ wildcardData[type].total }}</small>
+        </div>
+      </div>
+      <p-chart type="pie" [data]="wildcardChartData"></p-chart>
+    </p-panel>
+
+    <p-panel header="Currency">
+      <div class="grid">
+        <div class="col-6">
+          <h3>Gold</h3>
+          <p>{{ currencyData.gold | number }}</p>
+        </div>
+        <div class="col-6">
+          <h3>Gems</h3>
+          <p>{{ currencyData.gems | number }}</p>
+        </div>
+      </div>
+    </p-panel>
+  </div>
+</p-card>
