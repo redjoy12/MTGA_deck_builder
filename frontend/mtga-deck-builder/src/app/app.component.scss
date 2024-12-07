@@ -1,0 +1,42 @@
+// app.component.scss
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  header {
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+  }
+  
+  nav {
+    ul {
+      display: flex;
+      list-style: none;
+      gap: 1rem;
+    }
+  
+    a {
+      color: white;
+      text-decoration: none;
+  
+      &.active {
+        font-weight: bold;
+        text-decoration: underline;
+      }
+    }
+  }
+  
+  main {
+    flex-grow: 1;
+    padding: 1rem;
+  }
+  
+  footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+  }
