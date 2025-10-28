@@ -1,18 +1,23 @@
+"""SQLAlchemy models for cards and decks."""
 from collections import Counter
 from typing import Dict, List
 
-from app.core.database import Base
-from sqlalchemy import (ARRAY, JSON, Column, DateTime, Float, ForeignKey, Index, Integer,
-                        String, Table, func, text)
+from sqlalchemy import (
+    ARRAY, Column, DateTime, Float, ForeignKey, Index, Integer,
+    String, Table, func, text
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
+
+from app.core.database import Base
 
 # Association table for deck-card relationship
 deck_cards = Table(
     'deck_cards', Base.metadata,
     Column('deck_id', Integer, ForeignKey('decks.id'), primary_key=True),
     Column('card_id', String, ForeignKey('cards.id'), primary_key=True),
-    Column('quantity', Integer, nullable=False)  # Required to store the number of each card in the deck
+    # Stores the number of each card in the deck
+    Column('quantity', Integer, nullable=False)
 )
 
 
@@ -95,9 +100,9 @@ class Card(Base):
     life_modifier = Column(String)  # For Vanguard cards
 
     decks = relationship("Deck", secondary=deck_cards, back_populates="cards")
-    
+
     __table_args__ = (
-        Index('idx_cards_text_search', 
+        Index('idx_cards_text_search',
               text("to_tsvector('english', name || ' ' || COALESCE(oracle_text, ''))")),
         Index('idx_cards_color_identity', color_identity, postgresql_using='gin'),
         Index('idx_cards_cmc', cmc),
@@ -179,7 +184,8 @@ class Deck(Base):
         Args:
             card (Card): The card to be added to the deck.
             quantity (int): The quantity of the card to be added.
-            sideboard (bool): If True, the card is added to the sideboard; otherwise, it's added to the mainboard.
+            sideboard (bool): If True, the card is added to the sideboard;
+                otherwise, it's added to the mainboard.
 
         Raises:
             ValueError: If the card's colors are incompatible with the deck's color identity.

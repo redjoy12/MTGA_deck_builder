@@ -1,3 +1,4 @@
+"""Application configuration settings."""
 import os
 import sys
 from functools import lru_cache
@@ -9,6 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
     PROJECT_NAME: str = "MTGA AI Deck Builder"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -35,9 +37,14 @@ class Settings(BaseSettings):
 
     @property
     def get_database_url(self) -> str:
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        """Construct the database URL from individual components."""
+        return (
+            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
     class Config:
+        """Pydantic configuration for Settings."""
         env_file = ".env"
         case_sensitive = True
         extra = "allow"  # This allows extra fields from the environment
@@ -45,6 +52,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Get cached settings instance."""
     return Settings()
 
 settings = get_settings()

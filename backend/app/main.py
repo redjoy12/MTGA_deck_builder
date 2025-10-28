@@ -1,32 +1,31 @@
-# backend/app/main.py
-import asyncio
+"""Main FastAPI application for MTGA AI Deck Builder."""
 import json
 import uvicorn
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from typing import Optional, List
+
+from fastapi import (
+    Depends, FastAPI, HTTPException, status,
+    WebSocket, WebSocketDisconnect, Query
+)
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from langchain_groq import ChatGroq
+from langchain_core.messages import HumanMessage
+from langgraph.graph import StateGraph, END
 
 from app.core.database import get_db, CardDatabase
+from app.core.config import settings
 from app.models.card import Card, Deck
 from app.models.schemas import (
     CardCreate, CardResponse, DeckCreate, DeckResponse,
-    DeckRequirements, DeckBase
+    DeckRequirements
 )
 from app.agents.agent_state import AgentState
 from app.agents.card_selector_agent import CardSelectorAgent
 from app.agents.deck_optimizer_agent import DeckOptimizerAgent
 from app.agents.final_review_agent import FinalReviewerAgent
 from app.agents.strategy_agent import StrategyAgent
-from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage
-from langgraph.graph import StateGraph, END
-
-from fastapi import Depends, FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
-from app.core.config import settings
 
 app = FastAPI(
     title="MTGA AI Deck Builder",
@@ -118,10 +117,9 @@ def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
     def route_reviewer(state: AgentState):
         if state.current_agent == "end":
             return "end"
-        elif state.current_agent == "strategy":
+        if state.current_agent == "strategy":
             return "strategy"
-        else:
-            return "card_selector"
+        return "card_selector"
 
     workflow.add_conditional_edges(
         "reviewer",
@@ -140,7 +138,7 @@ def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
 async def root():
     """
     Root endpoint for the API.
-    
+
     Returns:
         dict: A welcome message indicating the API is available.
     """
@@ -151,7 +149,7 @@ async def root():
 async def health_check():
     """
     Health check endpoint to verify if the API is running.
-    
+
     Returns:
         dict: Status indicating that the API is healthy.
     """
@@ -161,7 +159,12 @@ async def health_check():
 # Deck Endpoints
 # -----------------------------------------
 
-@app.post("/decks", response_model=DeckResponse, status_code=status.HTTP_201_CREATED, tags=["Decks"])
+@app.post(
+    "/decks",
+    response_model=DeckResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Decks"]
+)
 def create_deck(deck: DeckCreate, db: Session = Depends(get_db)):
     """
     Create a new deck with specified attributes.
@@ -187,13 +190,13 @@ def create_deck(deck: DeckCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Deck with this name already exists: {str(e)}"
-        )
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.get("/decks/{deck_id}", response_model=DeckResponse, tags=["Decks"])
 def get_deck(deck_id: int, db: Session = Depends(get_db)):
@@ -224,13 +227,13 @@ def get_deck(deck_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.get("/decks", response_model=List[DeckResponse], tags=["Decks"])
 def list_decks(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    format: Optional[str] = Query(None, description="Filter by format"),
+    deck_format: Optional[str] = Query(None, description="Filter by format"),
     db: Session = Depends(get_db)
 ):
     """
@@ -239,7 +242,7 @@ def list_decks(
     Args:
         skip (int): Number of records to skip for pagination.
         limit (int): Maximum number of records to return.
-        format (str, optional): Filter decks by format.
+        deck_format (str, optional): Filter decks by format.
         db (Session): Database session dependency.
 
     Returns:
@@ -250,15 +253,15 @@ def list_decks(
     """
     try:
         query = db.query(Deck)
-        if format:
-            query = query.filter(Deck.format == format)
+        if deck_format:
+            query = query.filter(Deck.format == deck_format)
         decks = query.offset(skip).limit(limit).all()
         return [convert_deck_to_response(deck) for deck in decks]
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.put("/decks/{deck_id}", response_model=DeckResponse, tags=["Decks"])
 def update_deck(deck_id: int, deck: DeckCreate, db: Session = Depends(get_db)):
@@ -298,7 +301,7 @@ def update_deck(deck_id: int, deck: DeckCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Deck name already exists: {str(e)}"
-        )
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
@@ -341,7 +344,12 @@ def delete_deck(deck_id: int, db: Session = Depends(get_db)):
 # Card Endpoints
 # -----------------------------------------
 
-@app.post("/cards", response_model=CardResponse, status_code=status.HTTP_201_CREATED, tags=["Cards"])
+@app.post(
+    "/cards",
+    response_model=CardResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Cards"]
+)
 def create_card(card: CardCreate, db: Session = Depends(get_db)):
     """
     Create a new card with specified attributes.
@@ -367,7 +375,7 @@ def create_card(card: CardCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Card with this ID already exists: {str(e)}"
-        )
+        ) from e
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
@@ -404,7 +412,7 @@ def get_card(card_id: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.get("/cards", response_model=List[CardResponse], tags=["Cards"])
 def list_cards(
@@ -412,7 +420,9 @@ def list_cards(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     name: Optional[str] = Query(None, description="Filter by card name (partial match)"),
     type_line: Optional[str] = Query(None, description="Filter by type line (partial match)"),
-    colors: Optional[str] = Query(None, description="Filter by color identity (comma-separated: W,U,B,R,G)"),
+    colors: Optional[str] = Query(
+        None, description="Filter by color identity (comma-separated: W,U,B,R,G)"
+    ),
     rarity: Optional[str] = Query(None, description="Filter by rarity"),
     db: Session = Depends(get_db)
 ):
@@ -453,7 +463,7 @@ def list_cards(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.put("/cards/{card_id}", response_model=CardResponse, tags=["Cards"])
 def update_card(card_id: str, card: CardCreate, db: Session = Depends(get_db)):
@@ -531,7 +541,12 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
 # Deck Generation & Building Endpoints
 # -----------------------------------------
 
-@app.post("/api/decks/generate", response_model=DeckResponse, status_code=status.HTTP_201_CREATED, tags=["Deck Building"])
+@app.post(
+    "/api/decks/generate",
+    response_model=DeckResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Deck Building"]
+)
 async def generate_deck(requirements: DeckRequirements, db: Session = Depends(get_db)):
     """
     Generate a new deck using AI agents based on specified requirements.
@@ -603,7 +618,7 @@ async def generate_deck(requirements: DeckRequirements, db: Session = Depends(ge
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating deck: {str(e)}"
-        )
+        ) from e
 
 @app.post("/api/decks/build", tags=["Deck Building"])
 async def build_deck_workflow(requirements: DeckRequirements):
@@ -664,7 +679,7 @@ async def build_deck_workflow(requirements: DeckRequirements):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error building deck: {str(e)}"
-        )
+        ) from e
 
 # -----------------------------------------
 # WebSocket Endpoint for Streaming
@@ -736,7 +751,11 @@ async def websocket_deck_builder(websocket: WebSocket):
 
         # Stream updates during workflow
         await manager.send_message(
-            json.dumps({"status": "processing", "agent": "strategy", "message": "Analyzing deck strategy"}),
+            json.dumps({
+                "status": "processing",
+                "agent": "strategy",
+                "message": "Analyzing deck strategy"
+            }),
             websocket
         )
 
@@ -763,11 +782,16 @@ async def websocket_deck_builder(websocket: WebSocket):
         generated_deck = final_state.get("deck")
 
         if generated_deck:
+            deck_data = (
+                generated_deck.dict()
+                if hasattr(generated_deck, "dict")
+                else generated_deck
+            )
             await manager.send_message(
                 json.dumps({
                     "status": "completed",
                     "message": "Deck building completed",
-                    "deck": generated_deck.dict() if hasattr(generated_deck, "dict") else generated_deck
+                    "deck": deck_data
                 }),
                 websocket
             )

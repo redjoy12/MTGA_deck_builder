@@ -1,5 +1,7 @@
+"""Utility functions for deck statistics and validation."""
 from collections import Counter
 from typing import List
+
 from app.models.schemas import DeckBase, DeckStatistics
 
 
@@ -18,10 +20,16 @@ def calculate_deck_statistics(deck: DeckBase) -> DeckStatistics:
 
     # Calculate average CMC (excluding lands)
     non_land_cards = [card for card in deck.main_deck if 'Land' not in card.type_line]
-    avg_cmc = sum(card.cmc * card.quantity for card in non_land_cards) / sum(card.quantity for card in non_land_cards)
+    total_cmc = sum(card.cmc * card.quantity for card in non_land_cards)
+    total_quantity = sum(card.quantity for card in non_land_cards)
+    avg_cmc = total_cmc / total_quantity
 
     # Distributions and curve calculations
-    color_dist, type_dist, role_dist, curve, mana_sources = Counter(), Counter(), Counter(), Counter(), Counter()
+    color_dist = Counter()
+    type_dist = Counter()
+    role_dist = Counter()
+    curve = Counter()
+    mana_sources = Counter()
 
     for card in all_cards:
         for color in card.colors:
@@ -55,18 +63,18 @@ def validate_mana_base(deck: DeckBase) -> List[str]:
     """
     issues = []
     stats = calculate_deck_statistics(deck)
-    
+
     # Check color requirements
     for color, percentage in stats.color_distribution.items():
         required_sources = max(20 * percentage, 14 * percentage)  # Basic heuristic
         if stats.mana_sources_by_color.get(color, 0) < required_sources:
             issues.append(f"Insufficient {color} mana sources")
-    
+
     # Check total lands
     total_lands = len(deck.lands)
     if total_lands < 20:
         issues.append("Too few lands")
     elif total_lands > 28:
         issues.append("Too many lands")
-    
+
     return issues

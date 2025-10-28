@@ -1,9 +1,10 @@
+"""Pydantic schemas for MTGA Deck Builder API."""
 from collections import Counter
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
-from enum import Enum
 
 
 
@@ -113,7 +114,8 @@ class DeckRequirements(BaseModel):
     constraints: Optional[str] = None
 
     @validator('colors')
-    def validate_colors(cls, v):
+    def validate_colors(cls, v):  # pylint: disable=no-self-argument
+        """Validate that colors are valid MTG color codes."""
         valid_colors = {'W', 'U', 'B', 'R', 'G'}
         if not all(color in valid_colors for color in v):
             raise ValueError('Invalid color code')
@@ -196,7 +198,6 @@ class DeckBase(BaseModel):
         issues = []
         # Combine all mainboard cards (main_deck + lands)
         all_mainboard = self.main_deck + self.lands
-        card_counts = Counter(card.name for card in all_mainboard)
 
         # Deck size check
         total_mainboard = sum(card.quantity for card in all_mainboard)
@@ -204,8 +205,9 @@ class DeckBase(BaseModel):
             issues.append(f"Deck must have at least 60 cards (currently {total_mainboard})")
 
         # Check individual card copy limits
+        basic_lands = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
         for card in all_mainboard:
-            if card.quantity > 4 and card.name not in ["Plains", "Island", "Swamp", "Mountain", "Forest"]:
+            if card.quantity > 4 and card.name not in basic_lands:
                 issues.append(f"Too many copies of {card.name} ({card.quantity}/4)")
 
         # Sideboard size check
@@ -227,13 +229,15 @@ class DeckCreate(BaseModel):
     strategy_tags: List[str] = []
 
     @validator('name')
-    def validate_name(cls, v):
+    def validate_name(cls, v):  # pylint: disable=no-self-argument
+        """Validate that deck name is not empty."""
         if not v or len(v.strip()) == 0:
             raise ValueError('Deck name cannot be empty')
         return v.strip()
 
     @validator('colors')
-    def validate_colors(cls, v):
+    def validate_colors(cls, v):  # pylint: disable=no-self-argument
+        """Validate that colors are valid MTG color codes."""
         valid_colors = {'W', 'U', 'B', 'R', 'G'}
         if not all(color in valid_colors for color in v):
             raise ValueError('Invalid color code')
