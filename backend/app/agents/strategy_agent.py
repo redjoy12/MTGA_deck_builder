@@ -3,7 +3,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_groq import ChatGroq
 
-from backend.app.agents.agent_state import AgentState
+from app.agents.agent_state import AgentState
 
 
 class StrategyAgent:

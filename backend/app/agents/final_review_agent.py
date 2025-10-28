@@ -3,8 +3,8 @@ from typing import Literal, Union
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
-from backend.app.agents.agent_state import AgentState
-from backend.app.core.database import CardDatabase
+from app.agents.agent_state import AgentState
+from app.core.database import CardDatabase
 
 
 

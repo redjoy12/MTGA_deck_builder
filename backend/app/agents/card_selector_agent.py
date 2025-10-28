@@ -3,11 +3,11 @@ from typing import Any, Dict
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
-from backend.app.agents.agent_state import AgentState
-from backend.app.core.database import CardDatabase
-from backend.app.models.card import Card, Deck
-from backend.app.models.schemas import CardRole, ManaCost
-from backend.app.utils.utils import calculate_deck_statistics
+from app.agents.agent_state import AgentState
+from app.core.database import CardDatabase
+from app.models.card import Card, Deck
+from app.models.schemas import CardRole, ManaCost
+from app.utils.utils import calculate_deck_statistics
 
 
 class CardSelectorAgent:

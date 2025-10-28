@@ -1,17 +1,17 @@
 import asyncio
 import json
 from langchain_groq import ChatGroq
-from backend.app.agents.agent_state import AgentState
-from backend.app.agents.card_selector_agent import CardSelectorAgent
-from backend.app.agents.deck_optimizer_agent import DeckOptimizerAgent
-from backend.app.agents.final_review_agent import FinalReviewerAgent
-from backend.app.agents.strategy_agent import StrategyAgent
-from backend.app.core.database import CardDatabase
-from backend.app.models.schemas import DeckRequirements
+from app.agents.agent_state import AgentState
+from app.agents.card_selector_agent import CardSelectorAgent
+from app.agents.deck_optimizer_agent import DeckOptimizerAgent
+from app.agents.final_review_agent import FinalReviewerAgent
+from app.agents.strategy_agent import StrategyAgent
+from app.core.database import CardDatabase
+from app.models.schemas import DeckRequirements
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, END
 
-from backend.app.core.config import settings
+from app.core.config import settings
 
 # Main Workflow
 def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
