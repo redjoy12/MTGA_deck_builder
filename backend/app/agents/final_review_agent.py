@@ -1,11 +1,9 @@
 import json
-from typing import Literal, Union
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from app.agents.agent_state import AgentState
 from app.core.database import CardDatabase
-
 
 
 class FinalReviewerAgent:
@@ -48,21 +46,21 @@ class FinalReviewerAgent:
             MessagesPlaceholder(variable_name="messages")
         ])
     
-    def run(self, state: AgentState) -> Union[AgentState, Literal["end"], Literal["strategy"]]:
+    def run(self, state: AgentState) -> AgentState:
         response = self.llm.invoke(self.prompt.format(
             messages=state.messages,
             current_deck=state.deck.model_dump(),
             requirements=state.requirements.model_dump()
         ))
-        
+
         review_results = json.loads(response.content)
-        
+
         # Check iteration limit
         state.iteration += 1
         if state.iteration >= state.max_iterations:
             review_results["decision"] = "APPROVE"
             review_results["reasons"].append("Maximum iteration limit reached")
-        
+
         if review_results["decision"] == "APPROVE":
             # Save deck to database with review data
             deck_data = {
@@ -79,10 +77,11 @@ class FinalReviewerAgent:
                 }
             }
             self.db.save_deck(deck_data)
-            return "end"
+            state.current_agent = "end"
         elif review_results["decision"] == "REVISE_STRATEGY":
-            state.messages.append(AIMessage(content=json.dumps(review_results, indent=2)))
-            return "strategy"
+            state.current_agent = "strategy"
         else:
-            state.messages.append(AIMessage(content=json.dumps(review_results, indent=2)))
-            return "card_selector"
+            state.current_agent = "card_selector"
+
+        state.messages.append(AIMessage(content=json.dumps(review_results, indent=2)))
+        return state
