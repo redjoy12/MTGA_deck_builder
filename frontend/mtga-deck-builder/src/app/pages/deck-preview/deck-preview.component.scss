@@ -3,75 +3,183 @@
   background-color: var(--background-secondary);
   border-radius: 10px;
   padding: 20px;
-  
-  .deck-summary {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    
-    .deck-info, .deck-statistics {
-      background-color: var(--background-primary);
-      padding: 15px;
-      border-radius: 8px;
-      width: 48%;
-      
-      h3, h4 {
-        color: var(--accent-color);
-        margin-bottom: 10px;
-      }
-    }
+
+  h3 {
+    color: var(--accent-color, #4a90e2);
+    margin-bottom: 10px;
+    font-size: 1.5rem;
   }
-  
-  .deck-breakdown {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
 
-    .main-deck, .sideboard {
-      background-color: var(--background-primary);
-      border-radius: 8px;
-      padding: 15px;
-      width: 48%;
+  p {
+    margin: 8px 0;
+    color: var(--text-primary, #ffffff);
+  }
 
-      h3 {
-        color: var(--accent-color);
-        margin-bottom: 10px;
+  strong {
+    color: var(--accent-color, #4a90e2);
+  }
+
+  // Statistics Grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background-color: var(--background-primary, rgba(0, 0, 0, 0.3));
+      border-radius: 6px;
+      border-left: 3px solid var(--accent-color, #4a90e2);
+
+      .stat-label {
+        font-weight: 600;
+        color: var(--text-secondary, #cccccc);
       }
 
-      ::ng-deep .p-datatable {
-        width: 100%;
-        
-        .p-datatable-header {
-          background-color: var(--background-secondary);
-          color: var(--text-primary);
-        }
-        
-        .p-datatable-tbody > tr {
-          &:hover {
-            background-color: rgba(74, 144, 226, 0.1);
-          }
-        }
+      .stat-value {
+        font-weight: bold;
+        color: var(--accent-color, #4a90e2);
+        font-size: 1.1rem;
       }
     }
   }
 
+  // Chart Container
+  .chart-container {
+    background-color: var(--background-primary, rgba(0, 0, 0, 0.3));
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+
+  // Panel Styling
+  ::ng-deep .p-panel {
+    margin-bottom: 20px;
+
+    .p-panel-header {
+      background-color: var(--background-primary, rgba(0, 0, 0, 0.4));
+      color: var(--accent-color, #4a90e2);
+      font-weight: bold;
+      font-size: 1.2rem;
+      padding: 15px;
+    }
+
+    .p-panel-content {
+      background-color: var(--background-secondary, rgba(0, 0, 0, 0.2));
+      color: var(--text-primary, #ffffff);
+    }
+  }
+
+  // Table Styling
+  ::ng-deep .p-datatable {
+    .p-datatable-header {
+      background-color: var(--background-secondary);
+      color: var(--text-primary);
+    }
+
+    .p-datatable-thead > tr > th {
+      background-color: var(--background-primary, rgba(0, 0, 0, 0.4));
+      color: var(--accent-color, #4a90e2);
+      font-weight: bold;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .p-datatable-tbody > tr {
+      background-color: var(--background-secondary, rgba(0, 0, 0, 0.2));
+      color: var(--text-primary, #ffffff);
+
+      &:hover {
+        background-color: rgba(74, 144, 226, 0.15);
+      }
+
+      > td {
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    .p-datatable-emptymessage > td {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary, #cccccc);
+      font-style: italic;
+    }
+  }
+
+  // Deck Actions
   .deck-actions {
     display: flex;
     justify-content: space-between;
+    gap: 15px;
     margin-top: 20px;
 
-    .p-button {
-      padding: 10px 20px;
+    ::ng-deep .p-button {
+      flex: 1;
+      padding: 12px 24px;
       border-radius: 5px;
-      
+      font-weight: bold;
+      transition: all 0.3s ease;
+
       &.p-button-success {
-        background-color: var(--accent-color);
+        background-color: var(--accent-color, #4a90e2);
+        border-color: var(--accent-color, #4a90e2);
+
+        &:hover:not(:disabled) {
+          background-color: darken(#4a90e2, 10%);
+          border-color: darken(#4a90e2, 10%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        }
       }
-      
+
       &.p-button-secondary {
-        background-color: var(--background-primary);
-        color: var(--text-primary);
+        background-color: var(--background-primary, rgba(0, 0, 0, 0.4));
+        border-color: var(--accent-color, #4a90e2);
+        color: var(--accent-color, #4a90e2);
+
+        &:hover:not(:disabled) {
+          background-color: rgba(74, 144, 226, 0.2);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
     }
+  }
+
+  // Divider Styling
+  ::ng-deep .p-divider {
+    margin: 20px 0;
+
+    &.p-divider-horizontal {
+      &:before {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  // Grid System (for layout)
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .col-6 {
+    padding: 15px;
+    background-color: var(--background-primary, rgba(0, 0, 0, 0.3));
+    border-radius: 8px;
   }
 }
