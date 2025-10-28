@@ -1,57 +1,190 @@
 <!-- deck-preview.component.html -->
 <p-card header="Deck Preview">
   <div class="deck-preview">
+    <!-- Deck Summary Section -->
     <p-panel header="Deck Summary">
       <div class="grid">
         <div class="col-6">
-          <h3>Deck Name: {{ deckName }}</h3>
-          <p>Colors: {{ colors }}</p>
-          <p>Format: {{ format }}</p>
+          <h3>{{ deckName }}</h3>
+          <p><strong>Format:</strong> {{ format }}</p>
+          <p><strong>Colors:</strong> {{ colors }}</p>
+          <p *ngIf="description"><strong>Description:</strong> {{ description }}</p>
         </div>
         <div class="col-6">
           <h3>Deck Statistics</h3>
-          <ul>
-            <li>Total Cards: {{ totalCards }}</li>
-            <li>Average CMC: {{ averageCmc }}</li>
-          </ul>
+          <div *ngIf="statistics">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Total Cards:</span>
+                <span class="stat-value">{{ statistics.totalCards }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Creatures:</span>
+                <span class="stat-value">{{ statistics.creatures }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Spells:</span>
+                <span class="stat-value">{{ statistics.spells }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Lands:</span>
+                <span class="stat-value">{{ statistics.lands }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Artifacts:</span>
+                <span class="stat-value">{{ statistics.artifacts }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Enchantments:</span>
+                <span class="stat-value">{{ statistics.enchantments }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Planeswalkers:</span>
+                <span class="stat-value">{{ statistics.planeswalkers }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Average CMC:</span>
+                <span class="stat-value">{{ statistics.averageCmc }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Median CMC:</span>
+                <span class="stat-value">{{ statistics.medianCmc }}</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!statistics">
+            <p>No statistics available</p>
+          </div>
         </div>
       </div>
     </p-panel>
 
     <p-divider></p-divider>
 
-    <p-panel header="Main Deck">
-      <p-table [value]="deckCards" responsiveLayout="scroll">
+    <!-- Mana Curve Chart -->
+    <p-panel header="Mana Curve">
+      <div class="chart-container" *ngIf="manaCurveData">
+        <p-chart
+          type="bar"
+          [data]="manaCurveData"
+          [options]="manaCurveOptions"
+          [style]="{'height': '300px'}"
+        ></p-chart>
+      </div>
+      <div *ngIf="!manaCurveData">
+        <p>No mana curve data available</p>
+      </div>
+    </p-panel>
+
+    <p-divider></p-divider>
+
+    <!-- Main Deck Section -->
+    <p-panel header="Main Deck ({{ deckCards.length }} unique cards)">
+      <p-table
+        [value]="deckCards"
+        responsiveLayout="scroll"
+        [scrollable]="true"
+        scrollHeight="400px"
+      >
         <ng-template pTemplate="header">
           <tr>
-            <th>Card Name</th>
             <th>Quantity</th>
+            <th>Card Name</th>
+            <th>Type</th>
             <th>Mana Cost</th>
+            <th>CMC</th>
+            <th>Rarity</th>
             <th>Actions</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-card>
           <tr>
-            <td>{{ card.name }}</td>
             <td>{{ card.quantity }}</td>
-            <td>{{ card.manaCost }}</td>
+            <td>{{ card.name }}</td>
+            <td>{{ card.type_line || card.type || '-' }}</td>
+            <td>{{ card.mana_cost || card.manaCost || '-' }}</td>
+            <td>{{ card.cmc || 0 }}</td>
+            <td>{{ card.rarity || '-' }}</td>
             <td>
-              <p-button 
-                icon="pi pi-trash" 
+              <p-button
+                icon="pi pi-trash"
                 styleClass="p-button-danger p-button-sm"
-                (click)="removeCard(card)"
+                (click)="removeCard(card, 'mainboard')"
+                [disabled]="!deck"
               ></p-button>
             </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7">No cards in deck</td>
           </tr>
         </ng-template>
       </p-table>
     </p-panel>
 
+    <!-- Sideboard Section (if present) -->
+    <div *ngIf="sideboardCards.length > 0">
+      <p-divider></p-divider>
+
+      <p-panel header="Sideboard ({{ sideboardCards.length }} unique cards)">
+        <p-table
+          [value]="sideboardCards"
+          responsiveLayout="scroll"
+          [scrollable]="true"
+          scrollHeight="300px"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Quantity</th>
+              <th>Card Name</th>
+              <th>Type</th>
+              <th>Mana Cost</th>
+              <th>CMC</th>
+              <th>Rarity</th>
+              <th>Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-card>
+            <tr>
+              <td>{{ card.quantity }}</td>
+              <td>{{ card.name }}</td>
+              <td>{{ card.type_line || card.type || '-' }}</td>
+              <td>{{ card.mana_cost || card.manaCost || '-' }}</td>
+              <td>{{ card.cmc || 0 }}</td>
+              <td>{{ card.rarity || '-' }}</td>
+              <td>
+                <p-button
+                  icon="pi pi-trash"
+                  styleClass="p-button-danger p-button-sm"
+                  (click)="removeCard(card, 'sideboard')"
+                  [disabled]="!deck"
+                ></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-panel>
+    </div>
+
     <p-divider></p-divider>
 
+    <!-- Deck Actions -->
     <div class="deck-actions">
-      <p-button label="Save Deck" icon="pi pi-save" styleClass="p-button-success"></p-button>
-      <p-button label="Export Deck" icon="pi pi-download" styleClass="p-button-secondary"></p-button>
+      <p-button
+        label="Save Deck"
+        icon="pi pi-save"
+        styleClass="p-button-success"
+        (click)="onSaveDeck()"
+        [disabled]="!deck"
+      ></p-button>
+      <p-button
+        label="Export Deck"
+        icon="pi pi-download"
+        styleClass="p-button-secondary"
+        (click)="onExportDeck()"
+        [disabled]="!deck"
+      ></p-button>
     </div>
   </div>
 </p-card>
