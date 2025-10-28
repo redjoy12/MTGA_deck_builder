@@ -4,11 +4,13 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_groq import ChatGroq
 
 from app.agents.agent_state import AgentState
+from app.core.database import CardDatabase
 
 
 class StrategyAgent:
-    def __init__(self, llm: ChatGroq):
+    def __init__(self, llm: ChatGroq, db: CardDatabase):
         self.llm = llm
+        self.db = db
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a Magic: The Gathering deck building strategist expert.
             Your role is to analyze deck requirements and develop a concrete strategy.
@@ -56,9 +58,9 @@ class StrategyAgent:
     
     def run(self, state: AgentState) -> AgentState:
         # Get similar successful decks for reference
-        similar_decks = state.db.get_similar_decks(
+        similar_decks = self.db.get_similar_decks(
             state.requirements.colors,
-            state.requirements.archetype,
+            state.requirements.archetype.value if hasattr(state.requirements.archetype, 'value') else state.requirements.archetype,
             state.requirements.format
         )
         

@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Literal
 from langchain_groq import ChatGroq
 from app.agents.agent_state import AgentState
 from app.agents.card_selector_agent import CardSelectorAgent
@@ -13,24 +14,52 @@ from langgraph.graph import StateGraph, END
 
 from app.core.config import settings
 
+
+def route_reviewer(state: AgentState) -> Literal["strategy", "card_selector", "end"]:
+    """Router function to determine the next node after reviewer."""
+    if state.current_agent == "end":
+        return "end"
+    elif state.current_agent == "strategy":
+        return "strategy"
+    else:
+        return "card_selector"
+
+
 # Main Workflow
 def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
     workflow = StateGraph(AgentState)
-    
-    # Add agents
-    workflow.add_node("strategy", StrategyAgent(llm))
-    workflow.add_node("card_selector", CardSelectorAgent(llm, db))
-    workflow.add_node("optimizer", DeckOptimizerAgent(llm))
-    workflow.add_node("reviewer", FinalReviewerAgent(llm, db))
-    
-    # Define edges
+
+    # Initialize agents
+    strategy_agent = StrategyAgent(llm, db)
+    card_selector_agent = CardSelectorAgent(llm, db)
+    optimizer_agent = DeckOptimizerAgent(llm)
+    reviewer_agent = FinalReviewerAgent(llm, db)
+
+    # Add agent nodes
+    workflow.add_node("strategy", strategy_agent.run)
+    workflow.add_node("card_selector", card_selector_agent.run)
+    workflow.add_node("optimizer", optimizer_agent.run)
+    workflow.add_node("reviewer", reviewer_agent.run)
+
+    # Set entry point
+    workflow.set_entry_point("strategy")
+
+    # Define sequential edges
     workflow.add_edge("strategy", "card_selector")
     workflow.add_edge("card_selector", "optimizer")
     workflow.add_edge("optimizer", "reviewer")
-    workflow.add_edge("reviewer", "strategy")
-    workflow.add_edge("reviewer", "card_selector")
-    workflow.add_edge("reviewer", END)
-    
+
+    # Define conditional edges from reviewer
+    workflow.add_conditional_edges(
+        "reviewer",
+        route_reviewer,
+        {
+            "strategy": "strategy",
+            "card_selector": "card_selector",
+            "end": END
+        }
+    )
+
     return workflow
 
 # Example usage with additional features
@@ -41,21 +70,21 @@ async def build_deck(requirements: str):
         streaming=True
     )
     db = CardDatabase(settings.get_database_url)
-    
+
     # Parse requirements
     reqs = json.loads(requirements)
     initial_state = AgentState(
         requirements=DeckRequirements(**reqs),
         messages=[HumanMessage(content=requirements)],
-        current_agent="strategy",
-        db=db
+        current_agent="strategy"
     )
-    
+
     # Create and run workflow
     workflow = create_deck_building_graph(llm, db)
-    final_state = await workflow.arun(initial_state)
-    
-    return final_state.deck
+    compiled_workflow = workflow.compile()
+    final_state = await compiled_workflow.ainvoke(initial_state)
+
+    return final_state["deck"]
 
 # Example of running the system
 async def main():

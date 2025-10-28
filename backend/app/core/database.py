@@ -68,6 +68,39 @@ class CardDatabase:
             session.commit()
             return result.scalar_one()
 
+    def get_similar_decks(self, colors: List[str], archetype: str, format_type: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Retrieves similar decks based on colors, archetype, and format.
+
+        Args:
+            colors (List[str]): List of color identities (e.g., ['U', 'B'])
+            archetype (str): Deck archetype (e.g., 'control', 'aggro')
+            format_type (str): Game format (e.g., 'Standard', 'Modern')
+            limit (int): Maximum number of decks to return
+
+        Returns:
+            List[Dict[str, Any]]: List of similar deck data
+        """
+        with self.SessionLocal() as session:
+            result = session.execute(text("""
+                SELECT
+                    id, name, description, archetype, colors,
+                    cards, performance_data, created_at
+                FROM decks
+                WHERE
+                    archetype = :archetype
+                    AND format = :format_type
+                    AND colors <@ :colors::jsonb
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """), {
+                "archetype": archetype,
+                "format_type": format_type,
+                "colors": json.dumps(colors),
+                "limit": limit
+            })
+            return [dict(row._mapping) for row in result]
+
     def update_deck_performance(self, deck_id: int, performance_data: Dict[str, Any]):
         """
         Updates the performance data of an existing deck based on its ID.
@@ -78,7 +111,7 @@ class CardDatabase:
         """
         with self.SessionLocal() as session:
             session.execute(text("""
-                UPDATE decks 
+                UPDATE decks
                 SET performance_data = performance_data || :performance_data::jsonb,
                     updated_at = NOW()
                 WHERE id = :deck_id
