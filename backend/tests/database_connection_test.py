@@ -3,10 +3,14 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
+# pylint: disable=wrong-import-position
+# Imports must come after sys.path modification
 from app.core.config import settings
 from sqlalchemy import create_engine, text
 
 def test_connection():
+    """Test database connection by executing a simple query."""
     # Create an engine instance using the database URL
     engine = create_engine(settings.get_database_url)
 
