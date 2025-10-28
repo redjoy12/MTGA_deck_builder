@@ -3,6 +3,12 @@ dist/
 build/
 *.egg-info/
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
 # Database
 *.sqlite
 *.db
@@ -24,3 +30,4 @@ htmlcov/
 
 # Virtual environment
 venv/
+env/
