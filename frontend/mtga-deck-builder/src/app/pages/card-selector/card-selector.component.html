@@ -1,71 +1,180 @@
+<p-toast></p-toast>
 
 <div class="card-selector">
-  <h2>Select Your Cards</h2>
-  
-  <form [formGroup]="cardSearchForm" (ngSubmit)="searchCards()">
+  <div class="header-section">
+    <h2>Card Selector</h2>
+    <p class="subtitle" *ngIf="currentDeckId">
+      Deck ID: <span class="deck-id">{{ currentDeckId }}</span>
+    </p>
+    <p class="subtitle warning" *ngIf="!currentDeckId">
+      No deck selected. Cards can be added once you create or select a deck.
+    </p>
+  </div>
+
+  <!-- Search Form -->
+  <form [formGroup]="cardSearchForm" (ngSubmit)="searchCards()" class="search-form">
     <div class="filters">
       <!-- Search Input -->
-      <div class="search-input">
-        <label for="searchTerm">Search Cards</label>
-        <input 
-          type="text" 
-          id="searchTerm" 
-          formControlName="searchTerm" 
-          placeholder="Enter card name or type"
+      <div class="form-field search-input">
+        <label for="searchTerm">Card Name</label>
+        <input
+          type="text"
+          id="searchTerm"
+          formControlName="searchTerm"
+          placeholder="Search by card name..."
           class="form-control"
+          pInputText
         >
-        <div *ngIf="f['searchTerm'].touched && f['searchTerm'].invalid" class="error-message">
-          <small *ngIf="f['searchTerm'].errors?.['required']">Search term is required</small>
-        </div>
       </div>
 
       <!-- Mana Cost Filter -->
-      <div class="mana-cost-filter">
-        <label for="manaCost">Mana Cost (Max)</label>
-        <input 
-          type="number" 
-          id="manaCost" 
-          formControlName="manaCost" 
-          placeholder="Enter max mana cost"
+      <div class="form-field mana-cost-filter">
+        <label for="manaCost">Max Mana Cost</label>
+        <input
+          type="number"
+          id="manaCost"
+          formControlName="manaCost"
+          placeholder="Max CMC"
           class="form-control"
+          min="0"
+          max="16"
+          pInputText
         >
       </div>
 
       <!-- Color Filter -->
-      <div class="color-filter">
-        <label>Select Colors:</label>
+      <div class="form-field color-filter">
+        <label>Colors</label>
         <div class="color-options">
-          <button 
-            *ngFor="let color of colorOptions" 
+          <button
+            *ngFor="let color of colorOptions"
             type="button"
-            class="color-btn {{ color.value }}"
+            class="color-btn"
             [class.selected]="isColorSelected(color.value)"
+            [ngClass]="color.cssClass"
             (click)="toggleColor(color.value)"
+            [attr.aria-label]="'Toggle ' + color.name"
           >
-            {{ color.name }}
+            <span class="color-name">{{ color.name.charAt(0) }}</span>
           </button>
+        </div>
+        <div class="selected-colors" *ngIf="selectedColors.length > 0">
+          <small>Selected: {{ selectedColors.join(', ') }}</small>
         </div>
       </div>
     </div>
 
-    <!-- Search Button -->
-    <button 
-      type="submit" 
-      class="search-btn"
-      [disabled]="cardSearchForm.invalid"
-    >
-      Search Cards
-    </button>
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button
+        type="submit"
+        class="search-btn primary-btn"
+        pButton
+        label="Search Cards"
+        icon="pi pi-search"
+      ></button>
+      <button
+        type="button"
+        class="clear-btn secondary-btn"
+        pButton
+        label="Clear"
+        icon="pi pi-times"
+        (click)="clearSearch()"
+        *ngIf="allCardResults.length > 0 || cardSearchForm.dirty"
+      ></button>
+    </div>
   </form>
 
+  <!-- Results Count -->
+  <div class="results-info" *ngIf="allCardResults.length > 0">
+    <p>
+      Showing {{ first + 1 }}-{{ getEndIndex() }} of {{ totalRecords }} cards
+    </p>
+  </div>
+
   <!-- Card Results -->
-  <div class="card-results" *ngIf="cardResults.length > 0">
+  <div class="card-results" *ngIf="paginatedCardResults.length > 0">
     <div class="card-grid">
-      <div class="card-item" *ngFor="let card of cardResults">
-        <img [src]="card.imageUrl" alt="{{ card.name }}">
+      <div
+        class="card-item"
+        *ngFor="let card of paginatedCardResults"
+        (mouseenter)="onCardHover(card)"
+        (mouseleave)="onCardLeave()"
+      >
+        <div class="card-image-container">
+          <img
+            [src]="getCardImageUrl(card)"
+            [alt]="card.name"
+            class="card-image"
+            (error)="$any($event.target).src='/assets/images/card-back.png'"
+          >
+        </div>
         <div class="card-details">
-          <h4>{{ card.name }}</h4>
-          <button (click)="addCardToDeck(card)">Add to Deck</button>
+          <h4 class="card-name" [pTooltip]="card.name" tooltipPosition="top">
+            {{ card.name }}
+          </h4>
+          <div class="card-info">
+            <span class="mana-cost" *ngIf="card.mana_cost || card.manaCost">
+              {{ card.mana_cost || card.manaCost }}
+            </span>
+            <span class="cmc" *ngIf="card.cmc !== undefined">
+              CMC: {{ card.cmc }}
+            </span>
+          </div>
+          <div class="card-type" *ngIf="card.type_line || card.type">
+            <small>{{ card.type_line || card.type }}</small>
+          </div>
+          <button
+            class="add-btn"
+            pButton
+            label="Add to Deck"
+            icon="pi pi-plus"
+            (click)="addCardToDeck(card)"
+            [disabled]="!currentDeckId"
+            [pTooltip]="currentDeckId ? 'Add this card to your deck' : 'Select a deck first'"
+            tooltipPosition="top"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <p-paginator
+      [rows]="rows"
+      [totalRecords]="totalRecords"
+      [first]="first"
+      [rowsPerPageOptions]="[10, 20, 30, 50]"
+      (onPageChange)="onPageChange($event)"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} cards"
+    ></p-paginator>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="allCardResults.length === 0 && cardSearchForm.dirty">
+    <i class="pi pi-search" style="font-size: 3rem; color: var(--text-secondary);"></i>
+    <p>No cards found. Try adjusting your search criteria.</p>
+  </div>
+
+  <!-- Card Preview Modal/Overlay -->
+  <div class="card-preview-overlay" *ngIf="hoveredCard">
+    <div class="preview-card">
+      <img
+        [src]="getCardImageUrl(hoveredCard)"
+        [alt]="hoveredCard.name"
+        class="preview-image"
+      >
+      <div class="preview-details">
+        <h3>{{ hoveredCard.name }}</h3>
+        <p class="preview-type">{{ hoveredCard.type_line || hoveredCard.type }}</p>
+        <p class="preview-text" *ngIf="hoveredCard.oracle_text">{{ hoveredCard.oracle_text }}</p>
+        <div class="preview-stats">
+          <span *ngIf="hoveredCard.power && hoveredCard.toughness">
+            {{ hoveredCard.power }}/{{ hoveredCard.toughness }}
+          </span>
+          <span *ngIf="hoveredCard.loyalty">
+            Loyalty: {{ hoveredCard.loyalty }}
+          </span>
         </div>
       </div>
     </div>
