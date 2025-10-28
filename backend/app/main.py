@@ -27,6 +27,9 @@ from app.agents.card_selector_agent import CardSelectorAgent
 from app.agents.deck_optimizer_agent import DeckOptimizerAgent
 from app.agents.final_review_agent import FinalReviewerAgent
 from app.agents.strategy_agent import StrategyAgent
+from app.routes import auth
+from app.core.dependencies import get_current_active_user
+from app.models.user import User
 
 app = FastAPI(
     title="MTGA AI Deck Builder",
@@ -42,6 +45,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include authentication routes
+app.include_router(auth.router)
 
 # -----------------------------------------
 # Helper Functions
@@ -166,13 +172,20 @@ async def health_check():
     status_code=status.HTTP_201_CREATED,
     tags=["Decks"]
 )
-def create_deck(deck: DeckCreate, db: Session = Depends(get_db)):
+def create_deck(
+    deck: DeckCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Create a new deck with specified attributes.
+
+    Requires authentication.
 
     Args:
         deck (DeckCreate): A Pydantic model containing deck creation data.
         db (Session): Database session dependency.
+        current_user (User): The authenticated user creating the deck.
 
     Returns:
         DeckResponse: The created deck details, including all attributes.
@@ -265,14 +278,22 @@ def list_decks(
         ) from e
 
 @app.put("/decks/{deck_id}", response_model=DeckResponse, tags=["Decks"])
-def update_deck(deck_id: int, deck: DeckCreate, db: Session = Depends(get_db)):
+def update_deck(
+    deck_id: int,
+    deck: DeckCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Update an existing deck.
+
+    Requires authentication.
 
     Args:
         deck_id (int): The ID of the deck to update.
         deck (DeckCreate): Updated deck data.
         db (Session): Database session dependency.
+        current_user (User): The authenticated user updating the deck.
 
     Returns:
         DeckResponse: The updated deck details.
@@ -311,13 +332,20 @@ def update_deck(deck_id: int, deck: DeckCreate, db: Session = Depends(get_db)):
         ) from e
 
 @app.delete("/decks/{deck_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Decks"])
-def delete_deck(deck_id: int, db: Session = Depends(get_db)):
+def delete_deck(
+    deck_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Delete a deck by its ID.
+
+    Requires authentication.
 
     Args:
         deck_id (int): The ID of the deck to delete.
         db (Session): Database session dependency.
+        current_user (User): The authenticated user deleting the deck.
 
     Raises:
         HTTPException: If the deck is not found or there's a database error.
@@ -550,9 +578,15 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
     status_code=status.HTTP_201_CREATED,
     tags=["Deck Building"]
 )
-async def generate_deck(requirements: DeckRequirements, db: Session = Depends(get_db)):
+async def generate_deck(
+    requirements: DeckRequirements,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Generate a new deck using AI agents based on specified requirements.
+
+    Requires authentication.
 
     This endpoint uses the multi-agent workflow to create an optimized deck
     that meets the specified requirements.
@@ -560,6 +594,7 @@ async def generate_deck(requirements: DeckRequirements, db: Session = Depends(ge
     Args:
         requirements (DeckRequirements): Deck building requirements and constraints.
         db (Session): Database session dependency.
+        current_user (User): The authenticated user generating the deck.
 
     Returns:
         DeckResponse: The generated deck details.
@@ -624,15 +659,21 @@ async def generate_deck(requirements: DeckRequirements, db: Session = Depends(ge
         ) from e
 
 @app.post("/api/decks/build", tags=["Deck Building"])
-async def build_deck_workflow(requirements: DeckRequirements):
+async def build_deck_workflow(
+    requirements: DeckRequirements,
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Start a deck building workflow and return the deck building process status.
+
+    Requires authentication.
 
     This endpoint initiates the multi-agent deck building workflow without
     saving to the database. Use this for interactive deck building.
 
     Args:
         requirements (DeckRequirements): Deck building requirements and constraints.
+        current_user (User): The authenticated user building the deck.
 
     Returns:
         dict: The workflow status and generated deck data.
