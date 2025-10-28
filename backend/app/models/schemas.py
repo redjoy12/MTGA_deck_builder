@@ -64,20 +64,25 @@ class ManaCost(BaseModel):
 
 
 class CardBase(BaseModel):
-    """Represents a basic card model used in a deck."""
+    """Represents a basic card model used in a deck, aligned with database Card model."""
+    id: str  # Card ID
     name: str
-    mana_cost: Optional[ManaCost]
+    mana_cost: Optional[str]  # Mana cost string (e.g., "{2}{U}{U}")
     cmc: float
-    colors: List[str]
-    quantity: int
+    color_identity: List[str]  # Aligned with database model
+    quantity: int  # Used when card is part of a deck
     type_line: str
-    oracle_text: str
-    power: Optional[str]
-    toughness: Optional[str]
+    oracle_text: Optional[str] = ""
+    power: Optional[str] = None
+    toughness: Optional[str] = None
+    loyalty: Optional[str] = None
     rarity: str
-    role: CardRole
     set_code: str
-    image_uri: Optional[str]
+    image_uri: Optional[str] = None
+    keywords: Optional[List[str]] = []
+
+    # Optional fields for additional functionality
+    role: Optional[CardRole] = None  # Can be assigned based on card analysis
 
     class Config:
         use_enum_values = True
@@ -115,30 +120,70 @@ class DeckRequirements(BaseModel):
         return v
 
 
-class CardCreate(CardBase):
-    """Schema for creating a card, including a unique identifier."""
+class CardCreate(BaseModel):
+    """Schema for creating a card with full Scryfall data."""
     id: str
+    scryfall_id: Optional[str] = None
+    oracle_id: Optional[str] = None
+    name: str
+    mana_cost: Optional[str] = None
+    cmc: float = 0.0
+    color_identity: List[str] = []
+    type_line: str
+    oracle_text: Optional[str] = ""
+    power: Optional[str] = None
+    toughness: Optional[str] = None
+    loyalty: Optional[str] = None
+    rarity: str
+    set_code: str
+    collector_number: Optional[str] = None
+    artist: Optional[str] = None
+    flavor_text: Optional[str] = None
+    released_at: Optional[str] = None
+    image_uri: Optional[str] = None
+    keywords: List[str] = []
+    legalities: Dict[str, str] = {}
+    prices: Optional[Dict[str, str]] = None
+    layout: Optional[str] = "normal"
+    card_faces: Optional[Dict] = None
+    back_image_uri: Optional[str] = None
 
 
 class CardResponse(CardBase):
     """Response schema for card information, used for API responses."""
-    id: str
+    scryfall_id: Optional[str] = None
+    oracle_id: Optional[str] = None
+    artist: Optional[str] = None
+    flavor_text: Optional[str] = None
+    released_at: Optional[str] = None
+    legalities: Optional[Dict[str, str]] = None
+    prices: Optional[Dict[str, str]] = None
+    layout: Optional[str] = None
 
     class Config:
         orm_mode = True
 
 
 class DeckBase(BaseModel):
-    """Represents the foundational structure of a deck, including main deck and sideboard."""
+    """
+    Represents the foundational structure of a deck for API/Agent use.
+
+    Note: This schema is optimized for agent processing and API responses.
+    The database model (Deck) stores mainboard/sideboard as JSONB dicts.
+    Conversion happens in the API layer.
+    """
     name: str
     format: str
-    description: Optional[str]
+    description: Optional[str] = None
     colors: List[str] = []
     strategy_tags: List[str] = []
-    main_deck: List[CardBase]
-    sideboard: Optional[List[CardBase]]
-    lands: List[CardBase]
-    statistics: DeckStatistics
+
+    # For agent use: cards organized by category
+    main_deck: List[CardBase] = []  # Non-land spells
+    sideboard: List[CardBase] = []
+    lands: List[CardBase] = []  # Lands separate for easy analysis
+
+    statistics: Optional[DeckStatistics] = None
     total_cards: int = Field(default=60)
 
     def validate_deck(self) -> List[str]:
@@ -149,27 +194,123 @@ class DeckBase(BaseModel):
             List[str]: A list of validation issues, if any.
         """
         issues = []
-        card_counts = Counter(card.name for card in self.main_deck + self.lands)
+        # Combine all mainboard cards (main_deck + lands)
+        all_mainboard = self.main_deck + self.lands
+        card_counts = Counter(card.name for card in all_mainboard)
 
         # Deck size check
-        if len(self.main_deck) + len(self.lands) != self.total_cards:
-            issues.append(f"Deck must be exactly {self.total_cards} cards")
+        total_mainboard = sum(card.quantity for card in all_mainboard)
+        if total_mainboard < 60:
+            issues.append(f"Deck must have at least 60 cards (currently {total_mainboard})")
 
         # Check individual card copy limits
-        for card_name, count in card_counts.items():
-            if count > 4 and card_name not in ["Plains", "Island", "Swamp", "Mountain", "Forest"]:
-                issues.append(f"Too many copies of {card_name}")
+        for card in all_mainboard:
+            if card.quantity > 4 and card.name not in ["Plains", "Island", "Swamp", "Mountain", "Forest"]:
+                issues.append(f"Too many copies of {card.name} ({card.quantity}/4)")
+
+        # Sideboard size check
+        sideboard_total = sum(card.quantity for card in self.sideboard)
+        if sideboard_total > 15:
+            issues.append(f"Sideboard must have at most 15 cards (currently {sideboard_total})")
 
         return issues
 
 
-class DeckResponse(DeckBase):
+class DeckResponse(BaseModel):
+    """
+    Response schema for deck information, used for API responses.
+
+    This schema matches the database Deck model structure.
+    For agent use, convert to DeckBase format.
+    """
     id: int
+    name: str
+    format: str
+    description: Optional[str] = None
     created_at: datetime
-    updated_at: Optional[datetime]
-    total_card_count: Optional[int]  # New field
-    # New field for color distribution
-    color_distribution: Optional[Dict[str, int]]
+    updated_at: Optional[datetime] = None
+
+    # Database structure: JSONB dicts
+    mainboard: Dict[str, int] = {}  # {card_id: quantity}
+    sideboard: Dict[str, int] = {}  # {card_id: quantity}
+    colors: List[str] = []
+    strategy_tags: List[str] = []
 
     class Config:
         orm_mode = True
+
+    def to_deck_base(self, card_lookup: Dict[str, 'Card']) -> DeckBase:
+        """
+        Convert DeckResponse to DeckBase format for agent use.
+
+        Args:
+            card_lookup: Dictionary mapping card_id to Card objects
+
+        Returns:
+            DeckBase object with cards organized into main_deck, lands, and sideboard lists
+        """
+        main_deck_cards = []
+        land_cards = []
+        sideboard_cards = []
+
+        # Process mainboard
+        for card_id, quantity in self.mainboard.items():
+            card = card_lookup.get(card_id)
+            if card:
+                card_base = CardBase(
+                    id=card.id,
+                    name=card.name,
+                    mana_cost=card.mana_cost,
+                    cmc=card.cmc,
+                    color_identity=card.color_identity or [],
+                    quantity=quantity,
+                    type_line=card.type_line,
+                    oracle_text=card.oracle_text or "",
+                    power=card.power,
+                    toughness=card.toughness,
+                    loyalty=card.loyalty,
+                    rarity=card.rarity,
+                    set_code=card.set_code,
+                    image_uri=card.image_uri,
+                    keywords=card.keywords or []
+                )
+
+                # Separate lands from non-lands
+                if 'Land' in card.type_line:
+                    land_cards.append(card_base)
+                else:
+                    main_deck_cards.append(card_base)
+
+        # Process sideboard
+        for card_id, quantity in self.sideboard.items():
+            card = card_lookup.get(card_id)
+            if card:
+                card_base = CardBase(
+                    id=card.id,
+                    name=card.name,
+                    mana_cost=card.mana_cost,
+                    cmc=card.cmc,
+                    color_identity=card.color_identity or [],
+                    quantity=quantity,
+                    type_line=card.type_line,
+                    oracle_text=card.oracle_text or "",
+                    power=card.power,
+                    toughness=card.toughness,
+                    loyalty=card.loyalty,
+                    rarity=card.rarity,
+                    set_code=card.set_code,
+                    image_uri=card.image_uri,
+                    keywords=card.keywords or []
+                )
+                sideboard_cards.append(card_base)
+
+        return DeckBase(
+            name=self.name,
+            format=self.format,
+            description=self.description,
+            colors=self.colors,
+            strategy_tags=self.strategy_tags,
+            main_deck=main_deck_cards,
+            lands=land_cards,
+            sideboard=sideboard_cards
+        )
