@@ -1,25 +1,26 @@
+"""Database population script for MTGA cards from Scryfall."""
 import asyncio
 import logging
 import os
 import sys
 from typing import Any, Dict, Set
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-from core.config import settings
-from models.card import Card  # Adjust import path as needed
-from services.scryfall import ScryfallService  # Import your existing service
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-# Import your existing models and database configuration
+from core.config import settings
+from models.card import Card
+from services.scryfall import ScryfallService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class MTGDatabasePopulator:
+    """Populates the database with MTG card data from Scryfall."""
     def __init__(self, database_url: str):
         # Convert the database URL to use asyncpg if needed
         if database_url.startswith('postgresql://'):
@@ -38,36 +39,39 @@ class MTGDatabasePopulator:
         )
         self.standard_sets: Set[str] = set()
 
-    async def get_session(self) -> AsyncSession: # type: ignore
+    async def get_session(self) -> AsyncSession:  # type: ignore
+        """Get an async database session with automatic commit/rollback."""
         session = self.async_session()
         try:
             yield session
             await session.commit()
-        except Exception as e:
+        except Exception:
             await session.rollback()
-            raise e
+            raise
         finally:
             await session.close()
 
     def transform_card_data(self, card_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Transform Scryfall card data to match our database schema with safe handling of missing attributes.
-        Returns a dictionary with all required fields, using appropriate default values when data is missing.
+        Transform Scryfall card data to match database schema.
+
+        Safely handles missing attributes and returns a dictionary with all
+        required fields, using appropriate default values when data is missing.
         """
         # Initialize image URIs and card faces
         image_uri = None
         back_image_uri = None
         card_faces = None
-        
+
         # Safe handling of card faces and images
         if 'card_faces' in card_data and card_data['card_faces']:
             card_faces = card_data['card_faces']
             front_face = card_faces[0]
-            
+
             # Handle front face image
             if 'image_uris' in front_face:
                 image_uri = front_face['image_uris'].get('normal', '')
-            
+
             # Handle back face image if it exists
             if len(card_faces) > 1 and 'image_uris' in card_faces[1]:
                 back_image_uri = card_faces[1]['image_uris'].get('normal', '')
@@ -134,20 +138,20 @@ class MTGDatabasePopulator:
 
         # Ensure arrays are actually arrays
         transformed_data['color_identity'] = (
-            transformed_data['color_identity'] 
-            if isinstance(transformed_data['color_identity'], list) 
+            transformed_data['color_identity']
+            if isinstance(transformed_data['color_identity'], list)
             else []
         )
         transformed_data['keywords'] = (
-            transformed_data['keywords'] 
-            if isinstance(transformed_data['keywords'], list) 
+            transformed_data['keywords']
+            if isinstance(transformed_data['keywords'], list)
             else []
         )
 
         # Ensure JSON fields are dictionaries
         transformed_data['legalities'] = (
-            transformed_data['legalities'] 
-            if isinstance(transformed_data['legalities'], dict) 
+            transformed_data['legalities']
+            if isinstance(transformed_data['legalities'], dict)
             else {}
         )
 
@@ -164,10 +168,10 @@ class MTGDatabasePopulator:
         try:
             transformed_data = self.transform_card_data(card_data)
         except ValueError as e:
-            logger.error(f"Invalid card data: {e}")
+            logger.error("Invalid card data: %s", e)
             return False
         except Exception as e:
-            logger.error(f"Error transforming card data: {e}")
+            logger.error("Error transforming card data: %s", e)
             return False
 
         try:
@@ -178,12 +182,12 @@ class MTGDatabasePopulator:
             if existing_card:
                 for key, value in transformed_data.items():
                     setattr(existing_card, key, value)
-                logger.info(f"Updated card: {existing_card.name}")
+                logger.info("Updated card: %s", existing_card.name)
             else:
                 new_card = Card(**transformed_data)
                 session.add(new_card)
-                logger.info(f"Added new card: {transformed_data['name']}")
-            
+                logger.info("Added new card: %s", transformed_data['name'])
+
             return True
 
         except Exception as e:
@@ -202,7 +206,10 @@ class MTGDatabasePopulator:
                 current_session = None
 
                 async for card_data in scryfall.get_standard_legal_cards():
-                    logger.debug(f"Retrieved card from Scryfall: {card_data['name']} (ID: {card_data['id']})")
+                    logger.debug(
+                        "Retrieved card from Scryfall: %s (ID: %s)",
+                        card_data['name'], card_data['id']
+                    )
                     # Create new session every 100 cards
                     if batch_size == 0:
                         if current_session:
@@ -221,12 +228,15 @@ class MTGDatabasePopulator:
                         # Commit every 100 cards
                         if batch_size >= 100:
                             await current_session.commit()
-                            logger.info(f"Successfully processed {cards_processed} cards (Failed: {cards_failed})")
+                            logger.info(
+                                "Successfully processed %d cards (Failed: %d)",
+                                cards_processed, cards_failed
+                            )
                             batch_size = 0
 
                     except Exception as e:
                         cards_failed += 1
-                        logger.error(f"Error processing card batch: {str(e)}")
+                        logger.error("Error processing card batch: %s", str(e))
                         await current_session.rollback()
                         continue
 
@@ -236,15 +246,17 @@ class MTGDatabasePopulator:
                     await current_session.close()
 
                 logger.info(
-                    f"Database population completed. Total cards processed: {cards_processed}, Failed: {cards_failed}")
+                    "Database population completed. Total cards processed: %d, Failed: %d",
+                    cards_processed, cards_failed
+                )
 
             except Exception as e:
-                logger.error(f"Error populating database: {str(e)}")
+                logger.error("Error populating database: %s", str(e))
                 raise
 
 
 async def main():
-    # Replace with your actual database URL
+    """Main entry point for database population script."""
     database_url = settings.get_database_url
 
     populator = MTGDatabasePopulator(database_url)

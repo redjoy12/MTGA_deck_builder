@@ -1,3 +1,4 @@
+"""Scryfall API service for fetching MTG card data."""
 import asyncio
 import logging
 import time
@@ -7,7 +8,7 @@ import aiohttp
 
 
 class ScryfallAPIError(Exception):
-    """Custom exception for Scryfall API errors"""
+    """Custom exception for Scryfall API errors."""
 
     def __init__(self, message: str, status_code: Optional[int] = None):
         self.status_code = status_code
@@ -90,8 +91,8 @@ class ScryfallService:
                 return data
 
         except aiohttp.ClientError as e:
-            self.logger.error(f"Network error occurred: {str(e)}")
-            raise ScryfallAPIError(f"Network error: {str(e)}")
+            self.logger.error("Network error occurred: %s", str(e))
+            raise ScryfallAPIError(f"Network error: {str(e)}") from e
 
     async def get_card(self, card_id: str) -> Dict[str, Any]:
         """
@@ -187,5 +188,5 @@ class ScryfallService:
                     params["page"] = params.get("page", 1) + 1
 
             except Exception as e:
-                self.logger.error(f"Error fetching Standard cards: {str(e)}")
+                self.logger.error("Error fetching Standard cards: %s", str(e))
                 raise

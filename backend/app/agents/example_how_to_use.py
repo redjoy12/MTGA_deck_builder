@@ -1,32 +1,35 @@
+"""Example script demonstrating how to use the multi-agent deck building system."""
 import asyncio
 import json
 from typing import Literal
+
 from langchain_groq import ChatGroq
+from langgraph.graph import StateGraph, END
+
+from langchain_core.messages import HumanMessage
+
 from app.agents.agent_state import AgentState
 from app.agents.card_selector_agent import CardSelectorAgent
 from app.agents.deck_optimizer_agent import DeckOptimizerAgent
 from app.agents.final_review_agent import FinalReviewerAgent
 from app.agents.strategy_agent import StrategyAgent
+from app.core.config import settings
 from app.core.database import CardDatabase
 from app.models.schemas import DeckRequirements
-from langchain_core.messages import HumanMessage
-from langgraph.graph import StateGraph, END
-
-from app.core.config import settings
 
 
 def route_reviewer(state: AgentState) -> Literal["strategy", "card_selector", "end"]:
     """Router function to determine the next node after reviewer."""
     if state.current_agent == "end":
         return "end"
-    elif state.current_agent == "strategy":
+    if state.current_agent == "strategy":
         return "strategy"
-    else:
-        return "card_selector"
+    return "card_selector"
 
 
 # Main Workflow
 def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
+    """Create and configure the multi-agent deck building workflow graph."""
     workflow = StateGraph(AgentState)
 
     # Initialize agents
@@ -64,6 +67,7 @@ def create_deck_building_graph(llm: ChatGroq, db: CardDatabase) -> StateGraph:
 
 # Example usage with additional features
 async def build_deck(requirements: str):
+    """Build a deck based on text requirements."""
     llm = ChatGroq(
         model="llama-3.1-70b-versatile",
         temperature=0,
@@ -88,6 +92,7 @@ async def build_deck(requirements: str):
 
 # Example of running the system
 async def main():
+    """Main example demonstrating deck building workflow."""
     requirements = {
         "colors": ["U", "B"],
         "strategy": "Control with card advantage and removal",
@@ -99,7 +104,7 @@ async def main():
         "budget_limit": 200.0,
         "constraints": "Include at least 6 counterspells"
     }
-    
+
     deck = await build_deck(json.dumps(requirements))
     print(json.dumps(deck.model_dump(), indent=2))
 

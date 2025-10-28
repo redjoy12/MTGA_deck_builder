@@ -1,0 +1,47 @@
+[MASTER]
+# Add files or directories matching the regex patterns to the ignore list
+ignore=CVS,.git,__pycache__,venv,env,.venv,alembic/versions
+
+# Use multiple processes to speed up Pylint
+jobs=1
+
+[MESSAGES CONTROL]
+# Disable import errors since dependencies may not be installed in lint environment
+disable=import-error,
+        # Disable too-few-public-methods for Pydantic models and simple classes
+        too-few-public-methods,
+        # Disable protected-access for SQLAlchemy
+        protected-access,
+        # Disable duplicate-code for now (can be reviewed separately)
+        duplicate-code
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+# Maximum number of lines in a module
+max-module-lines=1000
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=7
+
+# Maximum number of locals for function / method body
+max-locals=20
+
+[BASIC]
+# Good variable names which should always be accepted
+good-names=i,j,k,ex,Run,_,db,id,pk
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=4
+
+# Ignore comments when computing similarities
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities
+ignore-imports=yes

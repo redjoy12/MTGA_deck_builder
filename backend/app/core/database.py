@@ -1,5 +1,7 @@
+"""Database configuration and utility classes."""
 import json
 from typing import Any, Dict, List
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -22,7 +24,10 @@ class CardDatabase:
             conditions, params = [], {}
 
             if 'text' in query:
-                conditions.append("to_tsvector('english', name || ' ' || oracle_text) @@ plainto_tsquery(:text)")
+                conditions.append(
+                    "to_tsvector('english', name || ' ' || oracle_text) "
+                    "@@ plainto_tsquery(:text)"
+                )
                 params['text'] = query['text']
             if 'colors' in query:
                 conditions.append("color_identity <@ :colors")
@@ -56,7 +61,7 @@ class CardDatabase:
         with self.SessionLocal() as session:
             result = session.execute(text("""
                 INSERT INTO decks (
-                    name, description, format, archetype, colors, 
+                    name, description, format, archetype, colors,
                     cards, created_at, performance_data
                 )
                 VALUES (
@@ -68,7 +73,10 @@ class CardDatabase:
             session.commit()
             return result.scalar_one()
 
-    def get_similar_decks(self, colors: List[str], archetype: str, format_type: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def get_similar_decks(
+        self, colors: List[str], archetype: str,
+        format_type: str, limit: int = 5
+    ) -> List[Dict[str, Any]]:
         """
         Retrieves similar decks based on colors, archetype, and format.
 
@@ -121,18 +129,19 @@ class CardDatabase:
             })
             session.commit()
 
-DB_inist = CardDatabase(settings.get_database_url)
+DB_INSTANCE = CardDatabase(settings.get_database_url)
 
 def get_db():
-    db = DB_inist.SessionLocal()
+    """Dependency that provides a database session."""
+    db = DB_INSTANCE.SessionLocal()
     try:
         yield db
-    except Exception as e:
+    except Exception:
         db.rollback()
-        raise e
+        raise
     finally:
         db.close()
 
 def init_db():
     """Initialize the database by creating all tables based on the models."""
-    Base.metadata.create_all(bind=DB_inist.engine)
+    Base.metadata.create_all(bind=DB_INSTANCE.engine)

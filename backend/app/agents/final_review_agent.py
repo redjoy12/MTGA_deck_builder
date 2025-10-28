@@ -1,32 +1,36 @@
+"""Final deck review agent for validation and approval."""
 import json
+
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
-from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
 from app.agents.agent_state import AgentState
 from app.core.database import CardDatabase
 
 
 class FinalReviewerAgent:
+    """Agent responsible for final deck review and validation."""
     def __init__(self, llm: ChatGroq, db: CardDatabase):
         self.llm = llm
         self.db = db
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a Magic: The Gathering final deck reviewer.
             Perform a comprehensive review of the deck, checking:
-            
+
             1. Adherence to format rules and restrictions
             2. Strategic coherence and game plan clarity
             3. Mana base stability
             4. Sideboard effectiveness
             5. Budget constraints (if applicable)
-            
+
             Provide a final assessment with:
             - Overall deck rating (1-10)
             - Key strengths
             - Potential weaknesses
             - Matchup predictions
             - Improvement suggestions
-            
+
             Output your review in a structured format:
             ```json
             {
@@ -45,8 +49,9 @@ class FinalReviewerAgent:
             ```"""),
             MessagesPlaceholder(variable_name="messages")
         ])
-    
+
     def run(self, state: AgentState) -> AgentState:
+        """Execute the final review agent to validate and approve the deck."""
         response = self.llm.invoke(self.prompt.format(
             messages=state.messages,
             current_deck=state.deck.model_dump(),
@@ -63,8 +68,10 @@ class FinalReviewerAgent:
 
         if review_results["decision"] == "APPROVE":
             # Save deck to database with review data
+            colors_str = '-'.join(state.requirements.colors)
+            deck_name = f"{state.requirements.archetype.value} {colors_str}"
             deck_data = {
-                "name": f"{state.requirements.archetype.value} {'-'.join(state.requirements.colors)}",
+                "name": deck_name,
                 "description": json.dumps(review_results["review"]),
                 "format": state.requirements.format,
                 "archetype": state.requirements.archetype.value,
