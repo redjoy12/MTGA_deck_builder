@@ -21,7 +21,7 @@
     "@angular/platform-browser-dynamic": "^18.0.0",
     "@angular/platform-server": "^18.0.0",
     "@angular/router": "^18.0.0",
-    "@angular/ssr": "^18.0.1",
+    "@angular/ssr": "^18.2.21",
     "@ngrx/effects": "^18.1.1",
     "@ngrx/store": "^18.1.0",
     "chart.js": "^4.4.6",
