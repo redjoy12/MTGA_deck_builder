@@ -186,7 +186,11 @@ export class CardSelectorComponent implements OnInit {
         this.first = 0; // Reset to first page
         this.updatePaginatedResults();
 
-        if (results.length === 0) {
+        // Safely validate and use results count
+        const count = Number.isInteger(results.length) && results.length >= 0 ? results.length : 0;
+        const cardText = count !== 1 ? 'cards' : 'card';
+
+        if (count === 0) {
           this.messageService.add({
             severity: 'info',
             summary: 'No Results',
@@ -196,12 +200,13 @@ export class CardSelectorComponent implements OnInit {
           this.messageService.add({
             severity: 'success',
             summary: 'Search Complete',
-            detail: `Found ${results.length} card${results.length !== 1 ? 's' : ''}`
+            detail: 'Found ' + count + ' ' + cardText
           });
         }
       },
       error: (error) => {
         console.error('Error searching cards', error);
+        // Never display raw error messages from external sources
         this.messageService.add({
           severity: 'error',
           summary: 'Search Failed',
@@ -244,21 +249,25 @@ export class CardSelectorComponent implements OnInit {
       return;
     }
 
+    // Sanitize card name to prevent format string vulnerabilities
+    const sanitizedCardName = this.sanitizeText(card.name);
+
     // Call the deck service to add the card
     this.deckService.addCardToDeck(this.currentDeckId, card, quantity).subscribe({
       next: (updatedDeck) => {
         this.messageService.add({
           severity: 'success',
           summary: 'Card Added',
-          detail: `Added ${quantity}x ${card.name} to your deck`
+          detail: 'Added ' + quantity + 'x ' + sanitizedCardName + ' to your deck'
         });
       },
       error: (error) => {
         console.error('Error adding card to deck', error);
+        // Never display raw error messages from external sources
         this.messageService.add({
           severity: 'error',
           summary: 'Failed to Add Card',
-          detail: error.message || 'Could not add card to deck. Please try again.'
+          detail: 'Could not add card to deck. Please try again.'
         });
       }
     });
@@ -317,5 +326,28 @@ export class CardSelectorComponent implements OnInit {
    */
   getEndIndex(): number {
     return Math.min(this.first + this.rows, this.totalRecords);
+  }
+
+  /**
+   * Sanitize text to prevent format string vulnerabilities and XSS
+   * Removes or escapes potentially dangerous characters
+   */
+  private sanitizeText(text: string | undefined): string {
+    if (!text) {
+      return '';
+    }
+
+    // Convert to string and trim
+    const str = String(text).trim();
+
+    // Limit length to prevent DoS
+    const maxLength = 200;
+    const truncated = str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+
+    // Remove control characters and other potentially dangerous characters
+    // Allow only alphanumeric, spaces, and common punctuation
+    const sanitized = truncated.replace(/[^\w\s\-',.:!?()]/g, '');
+
+    return sanitized;
   }
 }
