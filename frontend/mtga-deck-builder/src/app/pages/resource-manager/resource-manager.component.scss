@@ -1,56 +1,162 @@
 // resource-manager.component.scss
 .resource-manager {
-  background-color: var(--background-secondary);
-  border-radius: 10px;
   padding: 20px;
 
-  ::ng-deep {
-    .p-panel {
-      margin-bottom: 20px;
-      
-      .p-panel-header {
-        background-color: var(--background-primary);
-        color: var(--accent-color);
-      }
+  // Wildcard card styling
+  .wildcard-card {
+    text-align: center;
+    padding: 1rem;
+    background: var(--surface-card, #ffffff);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-    
-    .p-progressbar {
-      height: 15px;
-      
-      .p-progressbar-value {
-        background-color: var(--accent-color);
+
+    .wildcard-title {
+      margin: 0 0 1rem 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-color, #333);
+    }
+
+    .wildcard-count {
+      margin-top: 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+
+      .current {
+        color: var(--primary-color, #3b82f6);
+        font-weight: 700;
+      }
+
+      .separator {
+        color: var(--text-color-secondary, #666);
+        margin: 0 0.25rem;
+      }
+
+      .total {
+        color: var(--text-color-secondary, #666);
       }
     }
   }
 
-  .wildcard-tracker, .currency-tracker {
+  // Chart container
+  .chart-container {
+    text-align: center;
+    padding: 2rem 1rem;
+
+    .chart-title {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-color, #333);
+    }
+  }
+
+  // Currency card styling
+  .currency-card {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    
-    .wildcard, .currency {
-      background-color: var(--background-primary);
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
-      flex: 1;
-      margin: 0 5px;
-      
-      h3 {
-        color: var(--accent-color);
-        margin-bottom: 10px;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--surface-card, #ffffff);
+    border-radius: 8px;
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &.gold {
+      border-left-color: #FFD700;
+
+      .currency-icon {
+        color: #FFD700;
+        font-size: 2rem;
+        margin-right: 1rem;
       }
-      
-      .count {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: var(--text-primary);
+    }
+
+    &.gems {
+      border-left-color: #00CED1;
+
+      .currency-icon {
+        color: #00CED1;
+        font-size: 2rem;
+        margin-right: 1rem;
+      }
+    }
+
+    &:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .currency-info {
+      flex: 1;
+
+      .currency-label {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color-secondary, #666);
+      }
+
+      .currency-amount {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-color, #333);
       }
     }
   }
 
-  ::ng-deep .p-chart {
-    max-height: 250px;
-    margin-top: 20px;
+  // Panel spacing
+  :host ::ng-deep {
+    .p-panel {
+      margin-bottom: 1rem;
+
+      .p-panel-header {
+        background: var(--surface-section, #f8f9fa);
+        border-color: var(--surface-border, #dee2e6);
+        font-weight: 600;
+      }
+
+      .p-panel-content {
+        border-color: var(--surface-border, #dee2e6);
+      }
+    }
+
+    .p-progressbar {
+      height: 12px;
+      border-radius: 6px;
+
+      .p-progressbar-value {
+        background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+      }
+    }
+
+    .p-card {
+      .p-card-header {
+        padding: 0;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .resource-manager {
+    padding: 10px;
+
+    .wildcard-card,
+    .currency-card {
+      margin-bottom: 1rem;
+    }
+
+    .chart-container {
+      padding: 1rem 0.5rem;
+    }
   }
 }

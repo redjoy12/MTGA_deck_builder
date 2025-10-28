@@ -6,6 +6,66 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, validator
 
 
+# -----------------------------------------
+# User Resources Schemas
+# -----------------------------------------
+
+class WildcardRarity(str, Enum):
+    """Enum for wildcard rarities."""
+    COMMON = "common"
+    UNCOMMON = "uncommon"
+    RARE = "rare"
+    MYTHIC = "mythic"
+
+
+class UserResourcesBase(BaseModel):
+    """Base schema for user resources."""
+    common_wildcards: int = Field(default=0, ge=0)
+    uncommon_wildcards: int = Field(default=0, ge=0)
+    rare_wildcards: int = Field(default=0, ge=0)
+    mythic_wildcards: int = Field(default=0, ge=0)
+    gold: int = Field(default=0, ge=0)
+    gems: int = Field(default=0, ge=0)
+
+
+class UserResourcesCreate(UserResourcesBase):
+    """Schema for creating user resources."""
+    user_id: str
+
+
+class UserResourcesUpdate(BaseModel):
+    """Schema for updating user resources (all fields optional)."""
+    common_wildcards: Optional[int] = Field(None, ge=0)
+    uncommon_wildcards: Optional[int] = Field(None, ge=0)
+    rare_wildcards: Optional[int] = Field(None, ge=0)
+    mythic_wildcards: Optional[int] = Field(None, ge=0)
+    gold: Optional[int] = Field(None, ge=0)
+    gems: Optional[int] = Field(None, ge=0)
+
+
+class UserResourcesResponse(UserResourcesBase):
+    """Response schema for user resources."""
+    id: int
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class WildcardUpdate(BaseModel):
+    """Schema for updating a specific wildcard."""
+    rarity: WildcardRarity
+    amount: int = Field(ge=0)
+
+
+class CurrencyUpdate(BaseModel):
+    """Schema for updating currency."""
+    gold: Optional[int] = Field(None, ge=0)
+    gems: Optional[int] = Field(None, ge=0)
+
+
 
 class CardType(Enum):
     """Represents the different types of Magic: The Gathering cards."""
