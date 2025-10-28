@@ -15,6 +15,8 @@ class CardDatabase:
     """Handles interactions with the card database for querying, saving, and updating deck data."""
     def __init__(self, connection_string: str):
         self.engine = create_engine(connection_string)
+        # pylint: disable=invalid-name
+        # SessionLocal follows SQLAlchemy naming convention for session factories
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
     def search_cards(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:

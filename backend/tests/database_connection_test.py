@@ -6,8 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 # pylint: disable=wrong-import-position
 # Imports must come after sys.path modification
-from app.core.config import settings
 from sqlalchemy import create_engine, text
+
+from app.core.config import settings
 
 def test_connection():
     """Test database connection by executing a simple query."""
