@@ -47,10 +47,19 @@ def upgrade() -> None:
     op.add_column('cards', sa.Column('artist', sa.String(), nullable=True))
     op.add_column('cards', sa.Column('flavor_text', sa.String(), nullable=True))
     op.add_column('cards', sa.Column('released_at', sa.String(), nullable=True))
-    op.add_column('cards', sa.Column('prices', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column('cards', sa.Column('produced_mana', postgresql.ARRAY(sa.String()), nullable=True))
+    op.add_column(
+        'cards',
+        sa.Column('prices', postgresql.JSONB(astext_type=sa.Text()), nullable=True)
+    )
+    op.add_column(
+        'cards',
+        sa.Column('produced_mana', postgresql.ARRAY(sa.String()), nullable=True)
+    )
     op.add_column('cards', sa.Column('edhrec_rank', sa.Integer(), nullable=True))
-    op.add_column('cards', sa.Column('color_indicator', postgresql.ARRAY(sa.String()), nullable=True))
+    op.add_column(
+        'cards',
+        sa.Column('color_indicator', postgresql.ARRAY(sa.String()), nullable=True)
+    )
     op.add_column('cards', sa.Column('loyalty', sa.String(), nullable=True))
     op.add_column('cards', sa.Column('hand_modifier', sa.String(), nullable=True))
     op.add_column('cards', sa.Column('life_modifier', sa.String(), nullable=True))

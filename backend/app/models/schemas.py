@@ -1,5 +1,4 @@
 """Pydantic schemas for MTGA Deck Builder API."""
-from collections import Counter
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional

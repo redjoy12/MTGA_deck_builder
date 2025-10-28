@@ -192,7 +192,10 @@ class MTGDatabasePopulator:
 
         except Exception as e:
             logger.error(
-                f"Error processing card {transformed_data.get('name', 'Unknown')}: {str(e)}")
+                "Error processing card %s: %s",
+                transformed_data.get('name', 'Unknown'),
+                str(e)
+            )
             return False
 
     async def populate_database(self):
