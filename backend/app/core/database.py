@@ -46,6 +46,7 @@ class CardDatabase:
                 base_query += " AND " + " AND ".join(conditions)
 
             result = session.execute(text(base_query), params)
+            # pylint: disable=protected-access
             return [dict(row._mapping) for row in result]
 
     def save_deck(self, deck_data: Dict[str, Any]) -> int:
@@ -107,6 +108,7 @@ class CardDatabase:
                 "colors": json.dumps(colors),
                 "limit": limit
             })
+            # pylint: disable=protected-access
             return [dict(row._mapping) for row in result]
 
     def update_deck_performance(self, deck_id: int, performance_data: Dict[str, Any]):

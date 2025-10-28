@@ -416,6 +416,8 @@ def get_card(card_id: str, db: Session = Depends(get_db)):
         ) from e
 
 @app.get("/cards", response_model=List[CardResponse], tags=["Cards"])
+# pylint: disable=too-many-positional-arguments
+# FastAPI endpoint requires multiple query parameters
 def list_cards(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -808,7 +810,8 @@ async def websocket_deck_builder(websocket: WebSocket):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        # Catch all exceptions in WebSocket handler to prevent server crash
         await manager.send_message(
             json.dumps({"status": "error", "message": f"Error: {str(e)}"}),
             websocket

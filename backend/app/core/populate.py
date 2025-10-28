@@ -11,6 +11,8 @@ from sqlalchemy.orm import sessionmaker
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
+# pylint: disable=wrong-import-position
+# Imports must come after sys.path modification
 from core.config import settings
 from models.card import Card
 from services.scryfall import ScryfallService
@@ -170,7 +172,8 @@ class MTGDatabasePopulator:
         except ValueError as e:
             logger.error("Invalid card data: %s", e)
             return False
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Catch all transformation errors to allow processing to continue
             logger.error("Error transforming card data: %s", e)
             return False
 
@@ -190,7 +193,8 @@ class MTGDatabasePopulator:
 
             return True
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Catch all database errors to allow processing to continue
             logger.error(
                 "Error processing card %s: %s",
                 transformed_data.get('name', 'Unknown'),
@@ -237,7 +241,8 @@ class MTGDatabasePopulator:
                             )
                             batch_size = 0
 
-                    except Exception as e:
+                    except Exception as e:  # pylint: disable=broad-exception-caught
+                        # Catch all batch processing errors to continue with next batch
                         cards_failed += 1
                         logger.error("Error processing card batch: %s", str(e))
                         await current_session.rollback()

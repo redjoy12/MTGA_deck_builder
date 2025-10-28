@@ -14,6 +14,8 @@ import os
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# pylint: disable=wrong-import-position
+# Imports must come after sys.path modification
 from app.core.config import settings
 from app.core.database import Base, DB_INSTANCE
 
@@ -38,7 +40,8 @@ def create_tables():
         for table in Base.metadata.sorted_tables:
             print(f"  - {table.name}")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        # Catch all database initialization errors
         print(f"\nError creating database tables: {e}")
         sys.exit(1)
 
@@ -52,7 +55,8 @@ def drop_tables():
         try:
             Base.metadata.drop_all(bind=DB_INSTANCE.engine)
             print("\nAll tables dropped successfully!")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Catch all database drop errors
             print(f"\nError dropping tables: {e}")
             sys.exit(1)
     else:
@@ -76,7 +80,8 @@ def reset_database():
             print("Tables created successfully!")
 
             print("\nDatabase reset complete!")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Catch all database reset errors
             print(f"\nError resetting database: {e}")
             sys.exit(1)
     else:
