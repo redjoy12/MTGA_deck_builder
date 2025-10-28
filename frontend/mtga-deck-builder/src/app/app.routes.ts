@@ -1,29 +1,25 @@
 import { Routes } from '@angular/router';
-import { DeckCreatorComponent } from './pages/deck-creator/deck-creator.component';
-import { CardSelectorComponent } from './pages/card-selector/card-selector.component';
-import { DeckPreviewComponent } from './pages/deck-preview/deck-preview.component';
-import { ResourceManagerComponent } from './pages/resource-manager/resource-manager.component';
 
 export const routes: Routes = [
-  { 
-    path: 'deck-creator', 
-    component: DeckCreatorComponent 
+  {
+    path: 'deck-creator',
+    loadComponent: () => import('./pages/deck-creator/deck-creator.component').then(m => m.DeckCreatorComponent)
   },
-  { 
-    path: 'card-selector', 
-    component: CardSelectorComponent 
+  {
+    path: 'card-selector',
+    loadComponent: () => import('./pages/card-selector/card-selector.component').then(m => m.CardSelectorComponent)
   },
-  { 
-    path: 'deck-preview', 
-    component: DeckPreviewComponent 
+  {
+    path: 'deck-preview',
+    loadComponent: () => import('./pages/deck-preview/deck-preview.component').then(m => m.DeckPreviewComponent)
   },
-  { 
-    path: 'resource-manager', 
-    component: ResourceManagerComponent 
+  {
+    path: 'resource-manager',
+    loadComponent: () => import('./pages/resource-manager/resource-manager.component').then(m => m.ResourceManagerComponent)
   },
-  { 
-    path: '', 
-    redirectTo: '/deck-creator', 
-    pathMatch: 'full' 
+  {
+    path: '',
+    redirectTo: '/deck-creator',
+    pathMatch: 'full'
   }
 ];
