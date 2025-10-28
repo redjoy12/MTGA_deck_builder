@@ -1,7 +1,6 @@
 """Database configuration and utility classes."""
 import json
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
