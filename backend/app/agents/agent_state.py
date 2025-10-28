@@ -1,8 +1,8 @@
 from typing import Any, List, Optional
 from pydantic import BaseModel
 from langchain_core.messages import BaseMessage
-from backend.app.models.card import Deck
-from backend.app.models.schemas import DeckRequirements
+from app.models.card import Deck
+from app.models.schemas import DeckRequirements
 
 class AgentState(BaseModel):
     requirements: DeckRequirements

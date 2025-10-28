@@ -1,6 +1,6 @@
 from collections import Counter
 from typing import List
-from backend.app.models.schemas import DeckBase, DeckStatistics
+from app.models.schemas import DeckBase, DeckStatistics
 
 
 def calculate_deck_statistics(deck: DeckBase) -> DeckStatistics:

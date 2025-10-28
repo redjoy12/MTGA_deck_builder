@@ -1,7 +1,7 @@
 from collections import Counter
 from typing import Dict, List
 
-from core.database import Base
+from app.core.database import Base
 from sqlalchemy import (ARRAY, JSON, Column, DateTime, Float, ForeignKey, Index, Integer,
                         String, Table, func, text)
 from sqlalchemy.orm import relationship

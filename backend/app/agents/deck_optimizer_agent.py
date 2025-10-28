@@ -3,9 +3,9 @@ from typing import Any, Dict, List
 from langchain_groq import ChatGroq
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
-from backend.app.agents.agent_state import AgentState
-from backend.app.models.card import  Deck
-from backend.app.utils.utils import calculate_deck_statistics, validate_mana_base
+from app.agents.agent_state import AgentState
+from app.models.card import Deck
+from app.utils.utils import calculate_deck_statistics, validate_mana_base
 
 
 class DeckOptimizerAgent:
