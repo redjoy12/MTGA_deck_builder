@@ -27,6 +27,7 @@ from app.agents.card_selector_agent import CardSelectorAgent
 from app.agents.deck_optimizer_agent import DeckOptimizerAgent
 from app.agents.final_review_agent import FinalReviewerAgent
 from app.agents.strategy_agent import StrategyAgent
+from app.api.routes import user_resources
 
 app = FastAPI(
     title="MTGA AI Deck Builder",
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(user_resources.router)
 
 # -----------------------------------------
 # Helper Functions

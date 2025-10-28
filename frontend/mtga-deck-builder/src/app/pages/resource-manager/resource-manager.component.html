@@ -1,28 +1,74 @@
 <!-- resource-manager.component.html -->
+<p-toast></p-toast>
+
 <p-card header="Resource Management">
+  <ng-template pTemplate="header">
+    <div class="flex justify-content-between align-items-center p-3">
+      <span class="text-xl font-bold">Resource Management</span>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-refresh"
+        class="p-button-rounded p-button-text"
+        (click)="refreshResources()"
+        [disabled]="isLoading"
+        [loading]="isLoading">
+      </button>
+    </div>
+  </ng-template>
+
   <div class="resource-manager">
-    <p-panel header="Wildcards">
+    <!-- Wildcards Section -->
+    <p-panel header="Wildcards" [toggleable]="true">
       <div class="grid">
-        <div class="col-3" *ngFor="let type of wildcardTypes">
-          <h3>{{ type | titlecase }}</h3>
-          <p-progressBar 
-            [value]="getWildcardProgressValue(type)"
-          ></p-progressBar>
-          <small>{{ wildcardData[type].current }}/{{ wildcardData[type].total }}</small>
+        <div class="col-12 md:col-6 lg:col-3" *ngFor="let type of wildcardTypes">
+          <div class="wildcard-card">
+            <h3 class="wildcard-title">{{ type | titlecase }}</h3>
+            <p-progressBar
+              [value]="getWildcardProgressValue(type)"
+              [showValue]="false"
+            ></p-progressBar>
+            <div class="wildcard-count">
+              <span class="current">{{ wildcardData[type].current }}</span>
+              <span class="separator">/</span>
+              <span class="total">{{ wildcardData[type].total }}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <p-chart type="pie" [data]="wildcardChartData"></p-chart>
+
+      <!-- Wildcard Distribution Chart -->
+      <div class="chart-container mt-4">
+        <h4 class="chart-title">Wildcard Distribution</h4>
+        <p-chart
+          type="pie"
+          [data]="wildcardChartData"
+          [options]="wildcardChartOptions"
+          [style]="{ width: '100%', maxWidth: '400px', margin: '0 auto' }">
+        </p-chart>
+      </div>
     </p-panel>
 
-    <p-panel header="Currency">
+    <!-- Currency Section -->
+    <p-panel header="Currency" [toggleable]="true" class="mt-3">
       <div class="grid">
-        <div class="col-6">
-          <h3>Gold</h3>
-          <p>{{ currencyData.gold | number }}</p>
+        <div class="col-12 md:col-6">
+          <div class="currency-card gold">
+            <i class="pi pi-circle-fill currency-icon"></i>
+            <div class="currency-info">
+              <h3 class="currency-label">Gold</h3>
+              <p class="currency-amount">{{ currencyData.gold | number }}</p>
+            </div>
+          </div>
         </div>
-        <div class="col-6">
-          <h3>Gems</h3>
-          <p>{{ currencyData.gems | number }}</p>
+        <div class="col-12 md:col-6">
+          <div class="currency-card gems">
+            <i class="pi pi-star-fill currency-icon"></i>
+            <div class="currency-info">
+              <h3 class="currency-label">Gems</h3>
+              <p class="currency-amount">{{ currencyData.gems | number }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </p-panel>
