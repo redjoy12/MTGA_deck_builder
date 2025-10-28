@@ -416,7 +416,7 @@ def get_card(card_id: str, db: Session = Depends(get_db)):
         ) from e
 
 @app.get("/cards", response_model=List[CardResponse], tags=["Cards"])
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=R0917,R0913
 # FastAPI endpoint requires multiple query parameters
 def list_cards(
     skip: int = Query(0, ge=0, description="Number of records to skip"),

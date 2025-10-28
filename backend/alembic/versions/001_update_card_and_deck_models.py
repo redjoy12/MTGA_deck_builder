@@ -7,9 +7,10 @@ Create Date: 2025-10-28 14:36:00.000000
 """
 # pylint: disable=invalid-name
 # This is an Alembic migration file and must follow Alembic's naming conventions
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op  # pylint: disable=no-name-in-module
 
 # revision identifiers, used by Alembic.
 revision = '001'
