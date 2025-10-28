@@ -6,6 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 from .config import settings
 
+# Base declarative class for SQLAlchemy models
+Base = declarative_base()
+
 class CardDatabase:
     """Handles interactions with the card database for querying, saving, and updating deck data."""
     def __init__(self, connection_string: str):
@@ -86,7 +89,6 @@ class CardDatabase:
             session.commit()
 
 DB_inist = CardDatabase(settings.get_database_url)
-Base = declarative_base()
 
 def get_db():
     db = DB_inist.SessionLocal()

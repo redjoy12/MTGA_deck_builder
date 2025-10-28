@@ -38,7 +38,7 @@ class Settings(BaseSettings):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     class Config:
-        env_file = "backend\\.env"
+        env_file = ".env"
         case_sensitive = True
         extra = "allow"  # This allows extra fields from the environment
 
