@@ -226,13 +226,38 @@ export class DeckService {
 
   // Private error handler with context
   private handleError(error: HttpErrorResponse, context: string): Observable<never> {
-    console.error(`Error ${context}:`, error);
+    // Sanitize context to prevent format string vulnerabilities
+    const sanitizedContext = this.sanitizeContext(context);
+    console.error('Error ' + sanitizedContext + ':', error);
 
     // Let the interceptor handle the error, but add context
     return throwError(() => ({
       ...error,
-      context: context,
+      context: sanitizedContext,
       timestamp: new Date().toISOString()
     }));
+  }
+
+  /**
+   * Sanitize context string to prevent format string vulnerabilities
+   * Removes or escapes potentially dangerous characters
+   */
+  private sanitizeContext(text: string): string {
+    if (!text) {
+      return 'unknown operation';
+    }
+
+    // Convert to string and trim
+    const str = String(text).trim();
+
+    // Limit length to prevent DoS
+    const maxLength = 150;
+    const truncated = str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+
+    // Remove control characters and other potentially dangerous characters
+    // Allow only alphanumeric, spaces, and common punctuation
+    const sanitized = truncated.replace(/[^\w\s\-':,./()]/g, '');
+
+    return sanitized || 'unknown operation';
   }
 }
