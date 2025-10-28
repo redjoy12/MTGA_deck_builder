@@ -1,6 +1,5 @@
 """SQLAlchemy models for user resources including wildcards and currency."""
-from sqlalchemy import Column, Integer, String, DateTime, func, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime, func
 
 from app.core.database import Base
 
