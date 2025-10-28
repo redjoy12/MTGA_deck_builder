@@ -18,26 +18,41 @@ deck_cards = Table(
 
 class Card(Base):
     """
-    SQLAlchemy model representing an MTGA card with attributes for search and identification.
+    SQLAlchemy model representing an MTGA card with comprehensive Scryfall data.
 
     Attributes:
-        id (int): The unique identifier for the card.
+        id (str): The unique identifier for the card (Arena ID).
+        scryfall_id (str): The Scryfall UUID for this card.
+        oracle_id (str): Oracle ID shared across card variants.
         name (str): The name of the card.
         mana_cost (str): The mana cost of the card.
         cmc (float): The converted mana cost of the card.
         color_identity (List[str]): The colors associated with the card.
+        color_indicator (List[str]): Color indicator for cards without mana cost.
         oracle_text (str): The card's oracle text.
         type_line (str): The card's type line.
         power (str): The power value of the card (for creatures).
         toughness (str): The toughness value of the card (for creatures).
+        loyalty (str): Loyalty value for planeswalkers.
         rarity (str): The rarity of the card.
         set_code (str): The set code the card belongs to.
         collector_number (str): The collector's number for the card.
+        artist (str): The artist who illustrated the card.
+        flavor_text (str): The flavor text of the card.
+        released_at (str): Release date in YYYY-MM-DD format.
         image_uri (str): The URI for the card's image.
         keywords (List[str]): Any keywords associated with the card.
-        legalities (Dict[str, str]): The legality status of the card in different formats.
-        price (float): The price of the card.
-        vector_embedding (Dict[str, float]): The vector embedding for the card.
+        legalities (Dict[str, str]): The legality status of the card in different formats (JSONB).
+        price (float): The primary price of the card.
+        prices (Dict[str, str]): Complete price data from Scryfall (JSONB).
+        produced_mana (List[str]): Colors of mana this card can produce.
+        edhrec_rank (int): Commander popularity rank.
+        vector_embedding (Dict[str, float]): The vector embedding for the card (JSONB).
+        layout (str): Card layout type ('normal', 'transform', 'modal_dfc', etc.).
+        card_faces (Dict): Full data for double-faced cards (JSONB).
+        back_image_uri (str): Image URI for the back face of double-faced cards.
+        hand_modifier (str): Hand size modifier for Vanguard cards.
+        life_modifier (str): Life total modifier for Vanguard cards.
         decks (List[Deck]): The decks the card is associated with.
     """
     __tablename__ = "cards"
@@ -56,14 +71,28 @@ class Card(Base):
     collector_number = Column(String)
     image_uri = Column(String)
     keywords = Column(ARRAY(String))
-    legalities = Column(JSON)
+    legalities = Column(JSONB)  # Use JSONB for better PostgreSQL performance
     price = Column(Float)
-    vector_embedding = Column(JSON)
-    
+    vector_embedding = Column(JSONB)  # Use JSONB for better PostgreSQL performance
+
     # New fields for handling double-faced cards
     layout = Column(String)  # 'normal', 'transform', 'modal_dfc', etc.
-    card_faces = Column(JSON)  # Store full face data as JSON
+    card_faces = Column(JSONB)  # Store full face data as JSONB
     back_image_uri = Column(String)  # Store back face image separately for convenience
+
+    # Additional Scryfall fields
+    scryfall_id = Column(String, unique=True, index=True)  # Official Scryfall UUID
+    oracle_id = Column(String)  # Oracle ID for card variants
+    artist = Column(String)
+    flavor_text = Column(String)
+    released_at = Column(String)  # Date string in YYYY-MM-DD format
+    prices = Column(JSONB)  # Complete price data from Scryfall (usd, usd_foil, eur, tix)
+    produced_mana = Column(ARRAY(String))  # Colors of mana this card can produce
+    edhrec_rank = Column(Integer)  # Commander popularity rank
+    color_indicator = Column(ARRAY(String))  # For cards with color indicator
+    loyalty = Column(String)  # For planeswalkers
+    hand_modifier = Column(String)  # For Vanguard cards
+    life_modifier = Column(String)  # For Vanguard cards
 
     decks = relationship("Deck", secondary=deck_cards, back_populates="cards")
     
@@ -77,20 +106,27 @@ class Card(Base):
 
 class Deck(Base):
     """
-    SQLAlchemy model representing a deck, including relationships and methods for management.
+    SQLAlchemy model representing a deck with JSONB storage for mainboard/sideboard.
+
+    The deck composition is stored in JSONB columns for efficient querying and updates.
+    Mainboard includes both spells and lands. Sideboard is separate.
 
     Attributes:
         id (int): The unique identifier for the deck.
         name (str): The name of the deck.
-        format (str): The format the deck is built for.
-        description (str): A description of the deck.
+        format (str): The format the deck is built for (Standard, Modern, etc.).
+        description (str): A description of the deck strategy.
         created_at (datetime): The date and time the deck was created.
         updated_at (datetime): The date and time the deck was last updated.
-        cards (List[Card]): The cards included in the deck.
-        mainboard (Dict[str, int]): The cards in the mainboard, stored as {card_id: quantity}.
-        sideboard (Dict[str, int]): The cards in the sideboard, stored as {card_id: quantity}.
-        colors (List[str]): The colors represented in the deck.
-        strategy_tags (List[str]): Any strategy tags associated with the deck.
+        mainboard (Dict[str, int]): Cards in the mainboard, stored as {card_id: quantity} (JSONB).
+        sideboard (Dict[str, int]): Cards in the sideboard, stored as {card_id: quantity} (JSONB).
+        colors (List[str]): The color identity of the deck (JSONB).
+        strategy_tags (List[str]): Strategy tags for deck categorization (JSONB).
+        cards (List[Card]): Relationship to Card objects (maintained for backwards compatibility).
+
+    Note:
+        The mainboard should include all 60+ cards (creatures, spells, and lands).
+        Lands are not stored separately in the database but can be filtered by type_line.
     """
     __tablename__ = "decks"
 
@@ -101,11 +137,14 @@ class Deck(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    # Deck composition stored as JSONB for efficiency
+    mainboard = Column(JSONB, default=dict)  # {card_id: quantity}
+    sideboard = Column(JSONB, default=dict)  # {card_id: quantity}
+    colors = Column(JSONB, default=list)  # ['W', 'U', 'B', 'R', 'G']
+    strategy_tags = Column(JSONB, default=list)  # ['aggro', 'tempo', etc.]
+
+    # Relationship to cards (for backwards compatibility and ORM conveniences)
     cards = relationship("Card", secondary=deck_cards, back_populates="decks")
-    mainboard = Column(JSONB)  # Store as {card_id: quantity}
-    sideboard = Column(JSONB)  # Store as {card_id: quantity}
-    colors = Column(JSONB)
-    strategy_tags = Column(JSONB)
 
     __table_args__ = (
         Index('idx_decks_colors', colors, postgresql_using='gin'),
@@ -126,7 +165,11 @@ class Deck(Base):
         if quantity > 4 and card_id not in ["Plains", "Island", "Swamp", "Mountain", "Forest"]:
             raise ValueError("Cannot have more than 4 of the same card in the mainboard.")
 
-        # Initialize mainboard if empty, then add or update the card
+        # Initialize mainboard if None
+        if self.mainboard is None:
+            self.mainboard = {}
+
+        # Add or update the card
         self.mainboard[card_id] = min(quantity, 4)
 
     def add_card(self, card: Card, quantity: int, sideboard: bool = False):
@@ -145,6 +188,9 @@ class Deck(Base):
             raise ValueError("Card colors are incompatible with deck's color identity.")
 
         if sideboard:
+            # Initialize sideboard if None
+            if self.sideboard is None:
+                self.sideboard = {}
             self.sideboard[card.id] = quantity
         else:
             self.add_card_to_mainboard(card.id, quantity)
