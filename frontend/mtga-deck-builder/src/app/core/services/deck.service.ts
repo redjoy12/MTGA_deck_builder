@@ -228,7 +228,7 @@ export class DeckService {
   private handleError(error: HttpErrorResponse, context: string): Observable<never> {
     // Sanitize context to prevent format string vulnerabilities
     const sanitizedContext = this.sanitizeContext(context);
-    console.error('Error ' + sanitizedContext + ':', error);
+    console.error('Error: %s', sanitizedContext, error);
 
     // Let the interceptor handle the error, but add context
     return throwError(() => ({
