@@ -1,18 +1,21 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, retry } from 'rxjs/operators';
 
 // Import interfaces
 import { Card } from '../../models/card.interface';
 import { DeckRequirements } from '../../models/deck-requirements.interface';
 
+// Import environment
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class CardService {
-  // Base API URL - replace with your actual backend URL
-  private apiUrl = 'http://localhost:8000/api/cards';
+  // Base API URL from environment configuration
+  private readonly apiUrl = `${environment.apiUrl}/cards`;
 
   constructor(private http: HttpClient) {}
 
@@ -24,6 +27,15 @@ export class CardService {
     type?: string;
     set?: string;
   }): Observable<Card[]> {
+    // Validate input parameters
+    if (!params || Object.keys(params).length === 0) {
+      return throwError(() => ({
+        message: 'Search parameters are required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
     // Convert search parameters to HttpParams
     let httpParams = new HttpParams();
 
@@ -49,49 +61,100 @@ export class CardService {
 
     return this.http.get<Card[]>(`${this.apiUrl}/search`, { params: httpParams })
       .pipe(
-        catchError(this.handleError)
+        retry(2), // Retry failed requests up to 2 times
+        catchError((error) => this.handleError(error, 'searching for cards'))
       );
   }
 
   // Get a specific card by ID
   getCardById(cardId: string): Observable<Card> {
+    if (!cardId || cardId.trim() === '') {
+      return throwError(() => ({
+        message: 'Card ID is required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
     return this.http.get<Card>(`${this.apiUrl}/${cardId}`)
       .pipe(
-        catchError(this.handleError)
+        retry(2),
+        catchError((error) => this.handleError(error, `fetching card with ID: ${cardId}`))
       );
   }
 
   // Get card suggestions based on deck strategy
   getCardSuggestions(colors: string[], strategy: string): Observable<Card[]> {
+    if (!colors || colors.length === 0) {
+      return throwError(() => ({
+        message: 'At least one color is required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
+    if (!strategy || strategy.trim() === '') {
+      return throwError(() => ({
+        message: 'Strategy is required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
     let params = new HttpParams()
       .set('colors', colors.join(','))
       .set('strategy', strategy);
 
     return this.http.get<Card[]>(`${this.apiUrl}/suggestions`, { params })
       .pipe(
-        catchError(this.handleError)
+        retry(2),
+        catchError((error) => this.handleError(error, 'fetching card suggestions'))
       );
   }
 
   // Get cards by set
   getCardsBySet(setCode: string): Observable<Card[]> {
+    if (!setCode || setCode.trim() === '') {
+      return throwError(() => ({
+        message: 'Set code is required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
     return this.http.get<Card[]>(`${this.apiUrl}/set/${setCode}`)
       .pipe(
-        catchError(this.handleError)
+        retry(2),
+        catchError((error) => this.handleError(error, `fetching cards from set: ${setCode}`))
       );
   }
 
   // Get card suggestions based on deck requirements
   getCardSuggestionsByRequirements(requirements: DeckRequirements): Observable<Card[]> {
+    if (!requirements) {
+      return throwError(() => ({
+        message: 'Deck requirements are required',
+        status: 400,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
     return this.http.post<Card[]>(`${this.apiUrl}/suggestions`, requirements)
       .pipe(
-        catchError(this.handleError)
+        retry(2),
+        catchError((error) => this.handleError(error, 'fetching card suggestions by requirements'))
       );
   }
 
-  // Private error handler
-  private handleError(error: any): Observable<never> {
-    console.error('An error occurred:', error);
-    throw error;
+  // Private error handler with context
+  private handleError(error: HttpErrorResponse, context: string): Observable<never> {
+    console.error(`Error ${context}:`, error);
+
+    // Let the interceptor handle the error, but add context
+    return throwError(() => ({
+      ...error,
+      context: context,
+      timestamp: new Date().toISOString()
+    }));
   }
 }
