@@ -1,0 +1,44 @@
+[MASTER]
+# Ignore import errors (packages are installed, pylint can't see them in virtualenv)
+extension-pkg-whitelist=pydantic,sqlalchemy
+
+[MESSAGES CONTROL]
+# Disable checks that are not relevant or too strict for this project
+disable=
+    import-error,
+    no-name-in-module,
+    too-few-public-methods,
+    duplicate-code,
+    missing-module-docstring,
+    missing-class-docstring
+
+[FORMAT]
+# Maximum number of characters on a single line
+max-line-length=100
+
+# Maximum number of lines in a module
+max-module-lines=1000
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=7
+
+# Maximum number of locals for function / method body
+max-locals=20
+
+# Maximum number of attributes for a class
+max-attributes=10
+
+[BASIC]
+# Good variable names
+good-names=i,j,k,ex,Run,_,db,id,op
+
+# Allow certain naming patterns for alembic
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__)|([a-z_][a-z0-9_]*)|revision|down_revision|branch_labels|depends_on|database_url)
+
+# Allow PascalCase for SQLAlchemy SessionLocal
+attr-rgx=[a-z_][a-z0-9_]{2,30}$|SessionLocal
+
+[SIMILARITIES]
+# Minimum lines number of a similarity
+min-similarity-lines=10

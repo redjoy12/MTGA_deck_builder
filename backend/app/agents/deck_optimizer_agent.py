@@ -81,11 +81,17 @@ class DeckOptimizerAgent:
         state.current_agent = "reviewer"
         return state
 
-    def _apply_optimization_suggestions(self, deck: Deck, suggestions: Dict[str, List[Dict[str, Any]]]):
+    def _apply_optimization_suggestions(
+        self, deck: Deck, suggestions: Dict[str, List[Dict[str, Any]]]
+    ):
         # Remove cards
         for removal in suggestions["cards_to_remove"]:
-            deck.main_deck = [card for card in deck.main_deck if card.name != removal["name"]]
-            deck.lands = [card for card in deck.lands if card.name != removal["name"]]
+            deck.main_deck = [
+                card for card in deck.main_deck if card.name != removal["name"]
+            ]
+            deck.lands = [
+                card for card in deck.lands if card.name != removal["name"]
+            ]
 
         # Add cards (assuming card details are fetched)
         # This would need to be implemented with proper card detail fetching

@@ -1,7 +1,8 @@
 """Main FastAPI application for MTGA AI Deck Builder."""
 import json
-import uvicorn
 from typing import Optional, List
+
+import uvicorn
 
 from fastapi import (
     Depends, FastAPI, HTTPException, status,
@@ -307,7 +308,7 @@ def update_deck(deck_id: int, deck: DeckCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.delete("/decks/{deck_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Decks"])
 def delete_deck(deck_id: int, db: Session = Depends(get_db)):
@@ -338,7 +339,7 @@ def delete_deck(deck_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 # -----------------------------------------
 # Card Endpoints
@@ -381,7 +382,7 @@ def create_card(card: CardCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.get("/cards/{card_id}", response_model=CardResponse, tags=["Cards"])
 def get_card(card_id: str, db: Session = Depends(get_db)):
@@ -504,7 +505,7 @@ def update_card(card_id: str, card: CardCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 @app.delete("/cards/{card_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Cards"])
 def delete_card(card_id: str, db: Session = Depends(get_db)):
@@ -535,7 +536,7 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
-        )
+        ) from e
 
 # -----------------------------------------
 # Deck Generation & Building Endpoints
@@ -692,16 +693,20 @@ class ConnectionManager:
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
+        """Accept a new WebSocket connection and add it to active connections."""
         await websocket.accept()
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
+        """Remove a WebSocket connection from active connections."""
         self.active_connections.remove(websocket)
 
     async def send_message(self, message: str, websocket: WebSocket):
+        """Send a message to a specific WebSocket connection."""
         await websocket.send_text(message)
 
     async def broadcast(self, message: str):
+        """Broadcast a message to all active WebSocket connections."""
         for connection in self.active_connections:
             await connection.send_text(message)
 

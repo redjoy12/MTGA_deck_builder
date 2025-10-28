@@ -14,11 +14,12 @@ import os
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app.core.database import Base, DB_inist
 from app.core.config import settings
+from app.core.database import Base, DB_INSTANCE
 
 # Import all models to ensure they are registered with SQLAlchemy
 # This must be done before calling create_all()
+# pylint: disable=unused-import
 from app.models.card import Card, Deck, deck_cards
 
 
@@ -29,7 +30,7 @@ def create_tables():
 
     try:
         # Create all tables
-        Base.metadata.create_all(bind=DB_inist.engine)
+        Base.metadata.create_all(bind=DB_INSTANCE.engine)
         print("\nDatabase tables created successfully!")
 
         # List all created tables
@@ -49,7 +50,7 @@ def drop_tables():
 
     if response.lower() == 'yes':
         try:
-            Base.metadata.drop_all(bind=DB_inist.engine)
+            Base.metadata.drop_all(bind=DB_INSTANCE.engine)
             print("\nAll tables dropped successfully!")
         except Exception as e:
             print(f"\nError dropping tables: {e}")
@@ -67,11 +68,11 @@ def reset_database():
     if response.lower() == 'yes':
         try:
             print("\nDropping existing tables...")
-            Base.metadata.drop_all(bind=DB_inist.engine)
+            Base.metadata.drop_all(bind=DB_INSTANCE.engine)
             print("Tables dropped successfully!")
 
             print("\nCreating new tables...")
-            Base.metadata.create_all(bind=DB_inist.engine)
+            Base.metadata.create_all(bind=DB_INSTANCE.engine)
             print("Tables created successfully!")
 
             print("\nDatabase reset complete!")
