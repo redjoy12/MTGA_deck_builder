@@ -216,6 +216,30 @@ class DeckBase(BaseModel):
         return issues
 
 
+class DeckCreate(BaseModel):
+    """Schema for creating a deck."""
+    name: str
+    format: str
+    description: Optional[str] = None
+    mainboard: Dict[str, int] = {}  # {card_id: quantity}
+    sideboard: Dict[str, int] = {}  # {card_id: quantity}
+    colors: List[str] = []
+    strategy_tags: List[str] = []
+
+    @validator('name')
+    def validate_name(cls, v):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Deck name cannot be empty')
+        return v.strip()
+
+    @validator('colors')
+    def validate_colors(cls, v):
+        valid_colors = {'W', 'U', 'B', 'R', 'G'}
+        if not all(color in valid_colors for color in v):
+            raise ValueError('Invalid color code')
+        return v
+
+
 class DeckResponse(BaseModel):
     """
     Response schema for deck information, used for API responses.
