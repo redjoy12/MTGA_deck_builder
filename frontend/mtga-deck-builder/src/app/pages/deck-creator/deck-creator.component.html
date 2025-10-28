@@ -1,6 +1,22 @@
 <div class="deck-creator">
   <h2>Create Your Deck</h2>
-  
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Generating your deck...</p>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
   <form [formGroup]="deckForm" (ngSubmit)="generateDeck()">
     <div class="deck-requirements">
       <!-- Deck Name -->
@@ -23,8 +39,8 @@
       <div class="color-selection">
         <label>Select Colors (Max 3):</label>
         <div class="color-options">
-          <button 
-            *ngFor="let color of colorOptions" 
+          <button
+            *ngFor="let color of colorOptions"
             type="button"
             class="color-btn {{ color.value }}"
             [class.selected]="isColorSelected(color.value)"
@@ -33,13 +49,17 @@
             {{ color.name }}
           </button>
         </div>
+        <div *ngIf="f['colors'].touched && f['colors'].invalid" class="error-message">
+          <small *ngIf="f['colors'].errors?.['required']">At least one color is required</small>
+          <small *ngIf="f['colors'].errors?.['maxColors']">Maximum 3 colors allowed</small>
+        </div>
       </div>
 
       <!-- Format Selection -->
       <div class="format-selection">
         <label for="format">Select Format:</label>
-        <select 
-          id="format" 
+        <select
+          id="format"
           formControlName="format"
           class="form-control"
         >
@@ -56,8 +76,8 @@
       <!-- Strategy Selection -->
       <div class="strategy-selection">
         <label for="strategy">Select Strategy:</label>
-        <select 
-          id="strategy" 
+        <select
+          id="strategy"
           formControlName="strategy"
           class="form-control"
         >
@@ -84,12 +104,13 @@
     </div>
 
     <!-- Generate Deck Button -->
-    <button 
-      type="submit" 
+    <button
+      type="submit"
       class="generate-deck-btn"
-      [disabled]="deckForm.invalid"
+      [disabled]="deckForm.invalid || isLoading"
     >
-      Generate Deck
+      <span *ngIf="!isLoading">Generate Deck</span>
+      <span *ngIf="isLoading">Generating...</span>
     </button>
   </form>
 </div>

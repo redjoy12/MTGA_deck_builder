@@ -1,20 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  FormsModule, 
-  ReactiveFormsModule, 
-  FormBuilder, 
-  FormGroup, 
-  Validators 
+import { Router } from '@angular/router';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators
 } from '@angular/forms';
 
-// PrimeNG Imports
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+// Services
+import { DeckService } from '../../core/services/deck.service';
+
+// Models
+import { DeckRequirements } from '../../models/deck-requirements.interface';
+import { Deck } from '../../models/deck.interface';
 
 @Component({
   selector: 'app-deck-creator',
@@ -22,36 +22,19 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
   imports: [
     CommonModule,
     FormsModule,
-    ReactiveFormsModule,
-    CardModule,
-    ButtonModule,
-    InputTextModule,
-    DropdownModule,
-    MultiSelectModule,
-    InputTextareaModule
+    ReactiveFormsModule
   ],
   templateUrl: './deck-creator.component.html',
   styleUrls: ['./deck-creator.component.scss']
 })
 export class DeckCreatorComponent implements OnInit {
   deckForm!: FormGroup;
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
 
-  formats = [
-    { label: 'Standard', value: 'Standard' },
-    { label: 'Historic', value: 'Historic' },
-    { label: 'Pioneer', value: 'Pioneer' },
-    { label: 'Modern', value: 'Modern' },
-    { label: 'Legacy', value: 'Legacy' },
-    { label: 'Vintage', value: 'Vintage' }
-  ];
-
-  strategies = [
-    { label: 'Aggro', value: 'Aggro' },
-    { label: 'Control', value: 'Control' },
-    { label: 'Midrange', value: 'Midrange' },
-    { label: 'Combo', value: 'Combo' },
-    { label: 'Tempo', value: 'Tempo' }
-  ];
+  formats = ['Standard', 'Historic', 'Pioneer', 'Modern', 'Legacy', 'Vintage'];
+  strategies = ['Aggro', 'Control', 'Midrange', 'Combo', 'Tempo'];
 
   colorOptions = [
     { name: 'White', value: 'white' },
@@ -61,7 +44,11 @@ export class DeckCreatorComponent implements OnInit {
     { name: 'Green', value: 'green' }
   ];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private deckService: DeckService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.initForm();
@@ -70,23 +57,83 @@ export class DeckCreatorComponent implements OnInit {
   initForm() {
     this.deckForm = this.fb.group({
       name: ['', [
-        Validators.required, 
-        Validators.minLength(3), 
+        Validators.required,
+        Validators.minLength(3),
         Validators.maxLength(50)
       ]],
       format: ['', Validators.required],
       strategy: ['', Validators.required],
-      colors: [[], [Validators.required, Validators.maxLength(3)]],
+      colors: [[], [Validators.required, this.validateColors.bind(this)]],
       description: ['', Validators.maxLength(200)]
     });
   }
 
-  generateDeck() {
-    if (this.deckForm.valid) {
-      const deckData = this.deckForm.value;
-      console.log('Deck generated:', deckData);
-      // Call deck generation service or handle the deck creation logic here
+  // Custom validator for colors array
+  validateColors(control: any) {
+    const colors = control.value;
+    if (!colors || colors.length === 0) {
+      return { required: true };
     }
+    if (colors.length > 3) {
+      return { maxColors: true };
+    }
+    return null;
+  }
+
+  generateDeck() {
+    // Clear previous messages
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (this.deckForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.deckForm.controls).forEach(key => {
+        this.deckForm.get(key)?.markAsTouched();
+      });
+      this.errorMessage = 'Please fill in all required fields correctly.';
+      return;
+    }
+
+    this.isLoading = true;
+
+    // Build deck requirements object
+    const requirements: DeckRequirements = {
+      format: this.deckForm.value.format,
+      strategy: this.deckForm.value.strategy,
+      colors: this.deckForm.value.colors,
+      description: this.deckForm.value.description || undefined
+    };
+
+    // Call the deck service to generate the deck
+    this.deckService.generateDeck(requirements).subscribe({
+      next: (generatedDeck: Deck) => {
+        this.isLoading = false;
+        this.successMessage = `Deck "${this.deckForm.value.name}" generated successfully!`;
+
+        // Update the deck name with user's input
+        generatedDeck.name = this.deckForm.value.name;
+
+        // Save the generated deck
+        this.deckService.createDeck(generatedDeck).subscribe({
+          next: (savedDeck: Deck) => {
+            // Navigate to deck details or deck list after a short delay
+            setTimeout(() => {
+              this.router.navigate(['/decks', savedDeck.id]);
+            }, 1500);
+          },
+          error: (error: any) => {
+            this.isLoading = false;
+            this.errorMessage = error?.error?.detail || 'Failed to save the generated deck. Please try again.';
+            console.error('Error saving deck:', error);
+          }
+        });
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        this.errorMessage = error?.error?.detail || 'Failed to generate deck. Please try again.';
+        console.error('Error generating deck:', error);
+      }
+    });
   }
 
   isColorSelected(color: string): boolean {
