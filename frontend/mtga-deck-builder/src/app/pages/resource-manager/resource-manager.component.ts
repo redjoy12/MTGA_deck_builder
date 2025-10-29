@@ -140,7 +140,7 @@ export class ResourceManagerComponent implements OnInit, OnDestroy {
 
     // Use a default user ID if not authenticated (for demo purposes)
     // In production, this should redirect to login or show an error
-    const userId = currentUser?.id || 'demo-user';
+    const userId = String(currentUser?.id || 'demo-user');
 
     this.isLoading = true;
 

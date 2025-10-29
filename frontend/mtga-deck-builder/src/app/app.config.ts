@@ -10,6 +10,8 @@ import { routes } from './app.routes';
 
 // PrimeNG
 import { MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeng/themes/aura';
 
 // Interceptors
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -27,6 +29,11 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([authInterceptor, errorInterceptor])
     ),
     provideAnimations(),
+    providePrimeNG({
+      theme: {
+        preset: Aura
+      }
+    }),
     provideStore(reducers),
     provideEffects([DeckEffects, CardEffects]),
     provideStoreDevtools({
