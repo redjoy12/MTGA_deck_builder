@@ -3,11 +3,13 @@ import json
 from typing import Optional, List
 
 import uvicorn
+import logging
 
 from fastapi import (
     Depends, FastAPI, HTTPException, status,
-    WebSocket, WebSocketDisconnect, Query
+    WebSocket, WebSocketDisconnect, Query, Request
 )
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -50,6 +52,15 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(user_resources.router)
+
+# Global exception handler to ensure JSON error responses
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logging.getLogger(__name__).error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"}
+    )
 
 # -----------------------------------------
 # Helper Functions
