@@ -8,7 +8,6 @@ from app.models.schemas import (
     CardCreate,
     DeckBase,
     DeckCreate,
-    CardRole,
 )
 
 

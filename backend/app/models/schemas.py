@@ -239,16 +239,50 @@ class DeckBase(BaseModel):
             raise ValueError('Invalid color code. Must be one of: W, U, B, R, G')
         return v
 
+    def _is_basic_land(self, card_name: str, all_cards: List[CardBase]) -> bool:
+        """Check if a card is a basic land."""
+        basic_land_names = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
+        if card_name in basic_land_names:
+            return True
+
+        # Check type_line for "Basic Land"
+        for card in all_cards:
+            if card.name == card_name:
+                return 'Basic Land' in card.type_line
+        return False
+
+    def _validate_card_quantities(self, all_mainboard: List[CardBase]) -> None:
+        """Validate card quantity limits (max 4 except basic lands)."""
+        card_counts = {}
+        for card in all_mainboard:
+            card_counts[card.name] = card_counts.get(card.name, 0) + card.quantity
+
+        for card_name, quantity in card_counts.items():
+            if quantity > 4 and not self._is_basic_land(card_name, all_mainboard):
+                raise ValueError(
+                    f"Too many copies of '{card_name}' ({quantity}). "
+                    f"Maximum 4 copies allowed (except basic lands)"
+                )
+
+    def _validate_color_identity(self, cards: List[CardBase], deck_colors: List[str]) -> None:
+        """Validate that all cards match deck color identity."""
+        if not deck_colors:
+            return
+
+        deck_color_set = set(deck_colors)
+        for card in cards:
+            if card.color_identity:
+                card_color_set = set(card.color_identity)
+                if not card_color_set.issubset(deck_color_set):
+                    raise ValueError(
+                        f"Card '{card.name}' has colors {card.color_identity} "
+                        f"that are not in deck colors {deck_colors}"
+                    )
+
     @model_validator(mode='after')
     def validate_deck_rules(self):
         """Validate deck according to MTG rules."""
-        main_deck = self.main_deck
-        lands = self.lands
-        sideboard = self.sideboard
-        deck_colors = self.colors
-
-        # Combine all mainboard cards
-        all_mainboard = main_deck + lands
+        all_mainboard = self.main_deck + self.lands
 
         # 1. Deck size validation (minimum 60 cards)
         total_mainboard = sum(card.quantity for card in all_mainboard)
@@ -258,47 +292,17 @@ class DeckBase(BaseModel):
             )
 
         # 2. Card quantity validation (max 4 except basic lands)
-        basic_lands = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
-        card_counts = {}
-        for card in all_mainboard:
-            card_counts[card.name] = card_counts.get(card.name, 0) + card.quantity
-
-        for card_name, quantity in card_counts.items():
-            if quantity > 4:
-                # Check if it's a basic land by name or type_line
-                is_basic_land = card_name in basic_lands
-                if not is_basic_land:
-                    # Double-check by finding the card in the lists
-                    for card in all_mainboard:
-                        if card.name == card_name:
-                            if 'Basic Land' in card.type_line:
-                                is_basic_land = True
-                            break
-
-                if not is_basic_land:
-                    raise ValueError(
-                        f"Too many copies of '{card_name}' ({quantity}). "
-                        f"Maximum 4 copies allowed (except basic lands)"
-                    )
+        self._validate_card_quantities(all_mainboard)
 
         # 3. Sideboard size validation (max 15 cards)
-        sideboard_total = sum(card.quantity for card in sideboard)
+        sideboard_total = sum(card.quantity for card in self.sideboard)
         if sideboard_total > 15:
             raise ValueError(
                 f"Sideboard must have at most 15 cards (currently {sideboard_total})"
             )
 
         # 4. Color identity consistency validation
-        if deck_colors:
-            deck_color_set = set(deck_colors)
-            for card in all_mainboard + sideboard:
-                if card.color_identity:
-                    card_color_set = set(card.color_identity)
-                    if not card_color_set.issubset(deck_color_set):
-                        raise ValueError(
-                            f"Card '{card.name}' has colors {card.color_identity} "
-                            f"that are not in deck colors {deck_colors}"
-                        )
+        self._validate_color_identity(all_mainboard + self.sideboard, self.colors)
 
         # Update total_cards
         self.total_cards = total_mainboard
