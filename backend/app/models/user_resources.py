@@ -1,5 +1,5 @@
 """SQLAlchemy models for user resources including wildcards and currency."""
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, func
 
 from app.core.database import Base
 
@@ -10,7 +10,7 @@ class UserResources(Base):
 
     Attributes:
         id (int): The unique identifier for the user resources record.
-        user_id (str): The user identifier (foreign key).
+        user_id (int): The user identifier (foreign key to users.id).
         common_wildcards (int): Number of common wildcards owned.
         uncommon_wildcards (int): Number of uncommon wildcards owned.
         rare_wildcards (int): Number of rare wildcards owned.
@@ -23,7 +23,7 @@ class UserResources(Base):
     __tablename__ = "user_resources"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
 
     # Wildcards by rarity
     common_wildcards = Column(Integer, default=0, nullable=False)

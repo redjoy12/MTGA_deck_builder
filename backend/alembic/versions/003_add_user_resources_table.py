@@ -1,7 +1,7 @@
 """Add user_resources table for wildcard and currency tracking
 
-Revision ID: 002
-Revises: 001
+Revision ID: 003
+Revises: 002
 Create Date: 2025-10-28 15:00:00.000000
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op  # pylint: disable=no-name-in-module
 
 # revision identifiers, used by Alembic.
-revision = '002'
-down_revision = '001'
+revision = '003'
+down_revision = '002'
 branch_labels = None
 depends_on = None
 
@@ -25,7 +25,7 @@ def upgrade() -> None:
     op.create_table(
         'user_resources',
         sa.Column('id', sa.Integer(), nullable=False, primary_key=True, index=True),
-        sa.Column('user_id', sa.String(), nullable=False, unique=True, index=True),
+        sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True, index=True),
         sa.Column('common_wildcards', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('uncommon_wildcards', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('rare_wildcards', sa.Integer(), nullable=False, server_default='0'),
