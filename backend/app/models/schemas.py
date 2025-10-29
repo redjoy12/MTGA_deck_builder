@@ -494,6 +494,35 @@ class DeckResponse(BaseModel):
     class Config:
         from_attributes = True
 
+    def _create_card_base(self, card: 'Card', quantity: int) -> CardBase:
+        """
+        Helper method to create a CardBase object from a Card.
+
+        Args:
+            card: The Card object from database
+            quantity: The quantity of this card
+
+        Returns:
+            CardBase object
+        """
+        return CardBase(
+            id=card.id,
+            name=card.name,
+            mana_cost=card.mana_cost,
+            cmc=card.cmc,
+            color_identity=card.color_identity or [],
+            quantity=quantity,
+            type_line=card.type_line,
+            oracle_text=card.oracle_text or "",
+            power=card.power,
+            toughness=card.toughness,
+            loyalty=card.loyalty,
+            rarity=card.rarity,
+            set_code=card.set_code,
+            image_uri=card.image_uri,
+            keywords=card.keywords or []
+        )
+
     def to_deck_base(self, card_lookup: Dict[str, 'Card']) -> DeckBase:
         """
         Convert DeckResponse to DeckBase format for agent use.
@@ -511,53 +540,25 @@ class DeckResponse(BaseModel):
         # Process mainboard
         for card_id, quantity in self.mainboard.items():
             card = card_lookup.get(card_id)
-            if card:
-                card_base = CardBase(
-                    id=card.id,
-                    name=card.name,
-                    mana_cost=card.mana_cost,
-                    cmc=card.cmc,
-                    color_identity=card.color_identity or [],
-                    quantity=quantity,
-                    type_line=card.type_line,
-                    oracle_text=card.oracle_text or "",
-                    power=card.power,
-                    toughness=card.toughness,
-                    loyalty=card.loyalty,
-                    rarity=card.rarity,
-                    set_code=card.set_code,
-                    image_uri=card.image_uri,
-                    keywords=card.keywords or []
-                )
+            if not card:
+                continue
 
-                # Separate lands from non-lands
-                if 'Land' in card.type_line:
-                    land_cards.append(card_base)
-                else:
-                    main_deck_cards.append(card_base)
+            card_base = self._create_card_base(card, quantity)
+
+            # Separate lands from non-lands
+            if 'Land' in card.type_line:
+                land_cards.append(card_base)
+            else:
+                main_deck_cards.append(card_base)
 
         # Process sideboard
         for card_id, quantity in self.sideboard.items():
             card = card_lookup.get(card_id)
-            if card:
-                card_base = CardBase(
-                    id=card.id,
-                    name=card.name,
-                    mana_cost=card.mana_cost,
-                    cmc=card.cmc,
-                    color_identity=card.color_identity or [],
-                    quantity=quantity,
-                    type_line=card.type_line,
-                    oracle_text=card.oracle_text or "",
-                    power=card.power,
-                    toughness=card.toughness,
-                    loyalty=card.loyalty,
-                    rarity=card.rarity,
-                    set_code=card.set_code,
-                    image_uri=card.image_uri,
-                    keywords=card.keywords or []
-                )
-                sideboard_cards.append(card_base)
+            if not card:
+                continue
+
+            card_base = self._create_card_base(card, quantity)
+            sideboard_cards.append(card_base)
 
         return DeckBase(
             name=self.name,
