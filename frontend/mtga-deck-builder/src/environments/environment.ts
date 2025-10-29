@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://api.mtgadeckbuilder.com/api'
+  production: false,
+  apiUrl: 'http://localhost:8000/api'
 };
