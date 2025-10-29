@@ -1,0 +1,110 @@
+<div class="register-container">
+  <p-card header="Register for MTGA Deck Builder" styleClass="register-card">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- Success message display -->
+      <p-message
+        *ngIf="successMessage"
+        severity="success"
+        [text]="successMessage"
+        styleClass="success-message">
+      </p-message>
+
+      <!-- Error message display -->
+      <p-message
+        *ngIf="errorMessage"
+        severity="error"
+        [text]="errorMessage"
+        styleClass="error-message">
+      </p-message>
+
+      <!-- Username field -->
+      <div class="form-field">
+        <label for="username">Username *</label>
+        <input
+          type="text"
+          id="username"
+          pInputText
+          formControlName="username"
+          placeholder="Choose a username"
+          [class.ng-invalid]="f['username'].invalid && f['username'].touched"
+          [class.ng-dirty]="f['username'].touched"
+        />
+        <small *ngIf="getUsernameError()" class="p-error">
+          {{ getUsernameError() }}
+        </small>
+      </div>
+
+      <!-- Email field -->
+      <div class="form-field">
+        <label for="email">Email *</label>
+        <input
+          type="email"
+          id="email"
+          pInputText
+          formControlName="email"
+          placeholder="Enter your email"
+          [class.ng-invalid]="f['email'].invalid && f['email'].touched"
+          [class.ng-dirty]="f['email'].touched"
+        />
+        <small *ngIf="getEmailError()" class="p-error">
+          {{ getEmailError() }}
+        </small>
+      </div>
+
+      <!-- Password field -->
+      <div class="form-field">
+        <label for="password">Password *</label>
+        <p-password
+          id="password"
+          formControlName="password"
+          placeholder="Create a password"
+          [toggleMask]="true"
+          [feedback]="true"
+          styleClass="w-full"
+          [inputStyleClass]="f['password'].invalid && f['password'].touched ? 'ng-invalid ng-dirty' : ''"
+        >
+        </p-password>
+        <small *ngIf="getPasswordError()" class="p-error">
+          {{ getPasswordError() }}
+        </small>
+        <small *ngIf="!getPasswordError()" class="p-help">
+          Must be at least 8 characters with at least one letter and one digit
+        </small>
+      </div>
+
+      <!-- Confirm Password field -->
+      <div class="form-field">
+        <label for="confirmPassword">Confirm Password *</label>
+        <p-password
+          id="confirmPassword"
+          formControlName="confirmPassword"
+          placeholder="Confirm your password"
+          [toggleMask]="true"
+          [feedback]="false"
+          styleClass="w-full"
+          [inputStyleClass]="f['confirmPassword'].invalid && f['confirmPassword'].touched ? 'ng-invalid ng-dirty' : ''"
+        >
+        </p-password>
+        <small *ngIf="getConfirmPasswordError()" class="p-error">
+          {{ getConfirmPasswordError() }}
+        </small>
+      </div>
+
+      <!-- Submit button -->
+      <div class="form-actions">
+        <p-button
+          type="submit"
+          label="Register"
+          [loading]="loading"
+          [disabled]="loading"
+          styleClass="w-full">
+        </p-button>
+      </div>
+
+      <!-- Login link -->
+      <div class="login-link">
+        <p>Already have an account? <a routerLink="/login">Login here</a></p>
+      </div>
+    </form>
+  </p-card>
+</div>

@@ -1,17 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, retry, tap } from 'rxjs/operators';
+import { catchError, retry, tap, switchMap, map } from 'rxjs/operators';
 
 // Import environment
 import { environment } from '../../../environments/environment';
 
 // User interface for authentication
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
-  token?: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export interface LoginCredentials {
@@ -25,6 +28,16 @@ export interface RegisterData {
   password: string;
 }
 
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -32,26 +45,37 @@ export class AuthService {
   // Base API URL from environment configuration
   private readonly apiUrl = `${environment.apiUrl}/auth`;
 
-  // Current user state
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  // Current auth state
+  private authStateSubject = new BehaviorSubject<AuthState>({ user: null, token: null });
+  public authState$ = this.authStateSubject.asObservable();
+  public currentUser$ = this.authState$.pipe(
+    map(state => state.user)
+  );
 
   constructor(private http: HttpClient) {
-    // Load user from local storage on initialization
+    // Load auth state from local storage on initialization
+    const storedToken = localStorage.getItem('access_token');
     const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
+
+    if (storedToken && storedUser) {
       try {
-        this.currentUserSubject.next(JSON.parse(storedUser));
+        const user = JSON.parse(storedUser);
+        this.authStateSubject.next({ user, token: storedToken });
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('currentUser');
+        console.error('Error parsing stored auth data:', error);
+        this.clearAuthData();
       }
     }
   }
 
   // Get current user value
   public get currentUserValue(): User | null {
-    return this.currentUserSubject.value;
+    return this.authStateSubject.value.user;
+  }
+
+  // Get current auth state
+  public get authStateValue(): AuthState {
+    return this.authStateSubject.value;
   }
 
   // Login user
@@ -64,18 +88,38 @@ export class AuthService {
       }));
     }
 
-    return this.http.post<User>(`${this.apiUrl}/login`, credentials)
+    // Use the JSON login endpoint
+    return this.http.post<TokenResponse>(`${this.apiUrl}/login/json`, credentials)
       .pipe(
-        tap(user => {
-          // Store user details and token in local storage
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          this.currentUserSubject.next(user);
+        // After getting the token, fetch user details
+        tap(tokenResponse => {
+          // Store token in local storage
+          localStorage.setItem('access_token', tokenResponse.access_token);
         }),
-        catchError((error) => this.handleError(error, 'logging in'))
+        // Switch to fetch user details with the token
+        switchMap(tokenResponse => {
+          // Temporarily set token so the interceptor can use it
+          this.authStateSubject.next({
+            user: null,
+            token: tokenResponse.access_token
+          });
+          return this.http.get<User>(`${this.apiUrl}/me`);
+        }),
+        tap(user => {
+          // Store user details in local storage
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          // Update auth state with both user and token
+          const token = localStorage.getItem('access_token')!;
+          this.authStateSubject.next({ user, token });
+        }),
+        catchError((error) => {
+          this.clearAuthData();
+          return this.handleError(error, 'logging in');
+        })
       );
   }
 
-  // Register new user
+  // Register new user (returns user but doesn't log in automatically)
   register(data: RegisterData): Observable<User> {
     if (!data) {
       return throwError(() => ({
@@ -101,44 +145,56 @@ export class AuthService {
       }));
     }
 
-    if (!data.password || data.password.length < 6) {
+    if (!data.password || data.password.length < 8) {
       return throwError(() => ({
-        message: 'Password must be at least 6 characters',
+        message: 'Password must be at least 8 characters',
         status: 400,
         timestamp: new Date().toISOString()
       }));
     }
 
+    // Backend registration returns user without token
+    // User needs to log in separately after registration
     return this.http.post<User>(`${this.apiUrl}/register`, data)
       .pipe(
-        tap(user => {
-          // Store user details and token in local storage
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          this.currentUserSubject.next(user);
-        }),
         catchError((error) => this.handleError(error, 'registering user'))
       );
   }
 
   // Logout user
   logout(): void {
-    // Remove user from local storage
+    this.clearAuthData();
+  }
+
+  // Clear all authentication data
+  private clearAuthData(): void {
     localStorage.removeItem('currentUser');
-    this.currentUserSubject.next(null);
+    localStorage.removeItem('access_token');
+    this.authStateSubject.next({ user: null, token: null });
   }
 
   // Verify token with backend
   verifyToken(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/verify`)
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      this.clearAuthData();
+      return throwError(() => ({
+        message: 'No token found',
+        status: 401,
+        timestamp: new Date().toISOString()
+      }));
+    }
+
+    return this.http.get<User>(`${this.apiUrl}/me`)
       .pipe(
         retry(1),
         tap(user => {
           localStorage.setItem('currentUser', JSON.stringify(user));
-          this.currentUserSubject.next(user);
+          this.authStateSubject.next({ user, token });
         }),
         catchError((error) => {
           // If token verification fails, logout user
-          this.logout();
+          this.clearAuthData();
           return this.handleError(error, 'verifying token');
         })
       );
@@ -146,13 +202,12 @@ export class AuthService {
 
   // Check if user is authenticated
   isAuthenticated(): boolean {
-    return this.currentUserValue !== null;
+    return this.authStateSubject.value.token !== null && this.authStateSubject.value.user !== null;
   }
 
   // Get authentication token
   getToken(): string | null {
-    const user = this.currentUserValue;
-    return user?.token || null;
+    return this.authStateSubject.value.token;
   }
 
   // Private error handler with context

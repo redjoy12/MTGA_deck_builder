@@ -1,0 +1,130 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+:host ::ng-deep .login-card {
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  .p-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .p-card-body {
+    padding: 2rem;
+  }
+
+  .p-card-content {
+    padding: 0;
+  }
+}
+
+.form-field {
+  margin-bottom: 1.5rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  input,
+  :host ::ng-deep .p-password {
+    width: 100%;
+  }
+
+  :host ::ng-deep .p-inputtext {
+    width: 100%;
+  }
+
+  small.p-error {
+    display: block;
+    margin-top: 0.25rem;
+    color: #e24c4c;
+    font-size: 0.875rem;
+  }
+}
+
+.error-message {
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  :host ::ng-deep .p-message {
+    width: 100%;
+  }
+}
+
+.form-actions {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+
+  :host ::ng-deep .p-button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+
+    &:enabled:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    }
+
+    &:enabled:active {
+      background: linear-gradient(135deg, #4a56bb 0%, #5e3680 100%);
+    }
+  }
+}
+
+.register-link {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+
+  p {
+    margin: 0;
+    color: #6c757d;
+  }
+
+  a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s;
+
+    &:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .login-card {
+    .p-card-header {
+      font-size: 1.25rem;
+      padding: 1rem;
+    }
+
+    .p-card-body {
+      padding: 1.5rem;
+    }
+  }
+}
