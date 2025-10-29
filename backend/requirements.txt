@@ -5,19 +5,13 @@ uvicorn
 # AI/ML Libraries
 langchain
 langgraph
-langchain-community
-langsmith
 langchain-groq
 
 # Database
 sqlalchemy==2.0.27
 alembic==1.13.1
-psycopg2-binary==2.9.9
-redis==5.0.1
-chromadb
 
 # Utils
-python-dotenv==1.0.1
 pydantic==2.6.1
 pydantic-settings
 python-jose==3.4.0
