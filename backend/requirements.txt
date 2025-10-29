@@ -10,6 +10,7 @@ langchain-groq
 # Database
 sqlalchemy==2.0.27
 alembic==1.13.1
+psycopg2
 
 # Utils
 pydantic==2.6.1
