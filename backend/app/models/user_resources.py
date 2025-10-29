@@ -23,7 +23,10 @@ class UserResources(Base):
     __tablename__ = "user_resources"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
+    user_id = Column(
+        Integer, ForeignKey('users.id', ondelete='CASCADE'),
+        unique=True, nullable=False, index=True
+    )
 
     # Wildcards by rarity
     common_wildcards = Column(Integer, default=0, nullable=False)

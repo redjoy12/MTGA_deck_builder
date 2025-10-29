@@ -25,7 +25,11 @@ def upgrade() -> None:
     op.create_table(
         'user_resources',
         sa.Column('id', sa.Integer(), nullable=False, primary_key=True, index=True),
-        sa.Column('user_id', sa.Integer(), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True, index=True),
+        sa.Column(
+            'user_id', sa.Integer(),
+            sa.ForeignKey('users.id', ondelete='CASCADE'),
+            nullable=False, unique=True, index=True
+        ),
         sa.Column('common_wildcards', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('uncommon_wildcards', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('rare_wildcards', sa.Integer(), nullable=False, server_default='0'),

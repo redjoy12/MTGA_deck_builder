@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from sqlalchemy import (
     ARRAY, Column, DateTime, Float, ForeignKey, Index, Integer,
-    String, Table, Boolean, func, text
+    String, Table, func, text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
