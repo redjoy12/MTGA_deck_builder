@@ -5,6 +5,7 @@ This module exports all SQLAlchemy models used in the application.
 """
 
 from .card import Card, Deck, deck_cards
+from .user import User
 from .user_resources import UserResources
 
-__all__ = ["Card", "Deck", "deck_cards", "UserResources"]
+__all__ = ["Card", "Deck", "deck_cards", "User", "UserResources"]
