@@ -1,0 +1,64 @@
+<div class="login-container">
+  <p-card header="Login to MTGA Deck Builder" styleClass="login-card">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Error message display -->
+      <p-message
+        *ngIf="errorMessage"
+        severity="error"
+        [text]="errorMessage"
+        styleClass="error-message">
+      </p-message>
+
+      <!-- Username field -->
+      <div class="form-field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          pInputText
+          formControlName="username"
+          placeholder="Enter your username"
+          [class.ng-invalid]="f['username'].invalid && f['username'].touched"
+          [class.ng-dirty]="f['username'].touched"
+        />
+        <small *ngIf="getUsernameError()" class="p-error">
+          {{ getUsernameError() }}
+        </small>
+      </div>
+
+      <!-- Password field -->
+      <div class="form-field">
+        <label for="password">Password</label>
+        <p-password
+          id="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          [toggleMask]="true"
+          [feedback]="false"
+          styleClass="w-full"
+          [inputStyleClass]="f['password'].invalid && f['password'].touched ? 'ng-invalid ng-dirty' : ''"
+        >
+        </p-password>
+        <small *ngIf="getPasswordError()" class="p-error">
+          {{ getPasswordError() }}
+        </small>
+      </div>
+
+      <!-- Submit button -->
+      <div class="form-actions">
+        <p-button
+          type="submit"
+          label="Login"
+          [loading]="loading"
+          [disabled]="loading"
+          styleClass="w-full">
+        </p-button>
+      </div>
+
+      <!-- Register link -->
+      <div class="register-link">
+        <p>Don't have an account? <a routerLink="/register">Register here</a></p>
+      </div>
+    </form>
+  </p-card>
+</div>
