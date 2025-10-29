@@ -283,8 +283,8 @@ class CardDatabase:
 
         Args:
             user_data (Dict[str, Any]): Dictionary containing user data.
-                Required fields: username, email, password_hash
-                Optional fields: is_active, is_verified, preferences
+                Required fields: username, email, hashed_password
+                Optional fields: is_active, is_superuser
 
         Returns:
             int: The unique identifier of the created user.
@@ -296,21 +296,20 @@ class CardDatabase:
             try:
                 result = session.execute(text("""
                     INSERT INTO users (
-                        username, email, password_hash, is_active,
-                        is_verified, preferences, created_at
+                        username, email, hashed_password, is_active,
+                        is_superuser, created_at
                     )
                     VALUES (
-                        :username, :email, :password_hash,
-                        :is_active, :is_verified, :preferences, NOW()
+                        :username, :email, :hashed_password,
+                        :is_active, :is_superuser, NOW()
                     )
                     RETURNING id
                 """), {
                     "username": user_data["username"],
                     "email": user_data["email"],
-                    "password_hash": user_data["password_hash"],
+                    "hashed_password": user_data["hashed_password"],
                     "is_active": user_data.get("is_active", True),
-                    "is_verified": user_data.get("is_verified", False),
-                    "preferences": json.dumps(user_data.get("preferences", {}))
+                    "is_superuser": user_data.get("is_superuser", False),
                 })
                 session.commit()
                 return result.scalar_one()
@@ -339,8 +338,8 @@ class CardDatabase:
         with self.SessionLocal() as session:
             result = session.execute(text("""
                 SELECT
-                    id, username, email, password_hash, is_active,
-                    is_verified, preferences, created_at, updated_at, last_login
+                    id, username, email, hashed_password, is_active,
+                    is_superuser, created_at, updated_at
                 FROM users
                 WHERE id = :user_id
             """), {"user_id": user_id})
@@ -363,8 +362,8 @@ class CardDatabase:
         with self.SessionLocal() as session:
             result = session.execute(text("""
                 SELECT
-                    id, username, email, password_hash, is_active,
-                    is_verified, preferences, created_at, updated_at, last_login
+                    id, username, email, hashed_password, is_active,
+                    is_superuser, created_at, updated_at
                 FROM users
                 WHERE email = :email
             """), {"email": email})
@@ -387,8 +386,8 @@ class CardDatabase:
         with self.SessionLocal() as session:
             result = session.execute(text("""
                 SELECT
-                    id, username, email, password_hash, is_active,
-                    is_verified, preferences, created_at, updated_at, last_login
+                    id, username, email, hashed_password, is_active,
+                    is_superuser, created_at, updated_at
                 FROM users
                 WHERE username = :username
             """), {"username": username})
@@ -405,8 +404,8 @@ class CardDatabase:
         Args:
             user_id (int): The unique identifier of the user to update.
             user_data (Dict[str, Any]): Dictionary containing fields to update.
-                Can include: username, email, password_hash, is_active,
-                is_verified, preferences.
+                Can include: username, email, hashed_password, is_active,
+                is_superuser.
 
         Raises:
             ValueError: If the user with the given ID does not exist or
@@ -417,18 +416,14 @@ class CardDatabase:
             params = {"user_id": user_id}
 
             allowed_fields = [
-                'username', 'email', 'password_hash', 'is_active',
-                'is_verified', 'preferences'
+                'username', 'email', 'hashed_password', 'is_active',
+                'is_superuser'
             ]
 
             for field in allowed_fields:
                 if field in user_data:
-                    if field == 'preferences':
-                        set_clauses.append(f"{field} = :{field}::jsonb")
-                        params[field] = json.dumps(user_data[field])
-                    else:
-                        set_clauses.append(f"{field} = :{field}")
-                        params[field] = user_data[field]
+                    set_clauses.append(f"{field} = :{field}")
+                    params[field] = user_data[field]
 
             if not set_clauses:
                 raise ValueError("No valid fields provided for update")

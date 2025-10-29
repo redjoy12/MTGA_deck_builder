@@ -1,5 +1,6 @@
 """SQLAlchemy model for User authentication."""
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -17,6 +18,7 @@ class User(Base):
         is_superuser (bool): Whether the user has superuser privileges.
         created_at (datetime): The date and time the user was created.
         updated_at (datetime): The date and time the user was last updated.
+        decks (List[Deck]): The decks owned by this user.
     """
     __tablename__ = "users"
 
@@ -28,3 +30,6 @@ class User(Base):
     is_superuser = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    decks = relationship("Deck", back_populates="owner")

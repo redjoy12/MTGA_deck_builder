@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from sqlalchemy import (
     ARRAY, Column, DateTime, Float, ForeignKey, Index, Integer,
-    String, Table, Boolean, func, text
+    String, Table, func, text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -256,44 +256,3 @@ class Deck(Base):
         if not self.mainboard:
             return []
         return sorted(self.mainboard.items(), key=lambda item: item[1], reverse=True)[:n]
-
-
-class User(Base):
-    """
-    SQLAlchemy model representing a user account.
-
-    Attributes:
-        id (int): The unique identifier for the user.
-        username (str): The unique username for the user.
-        email (str): The unique email address for the user.
-        password_hash (str): The hashed password for authentication.
-        is_active (bool): Whether the user account is active.
-        is_verified (bool): Whether the user's email has been verified.
-        created_at (datetime): The date and time the user was created.
-        updated_at (datetime): The date and time the user was last updated.
-        last_login (datetime): The date and time of the user's last login.
-        preferences (Dict[str, Any]): User preferences and settings (JSONB).
-        decks (List[Deck]): The decks owned by this user.
-    """
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, nullable=False, unique=True, index=True)
-    email = Column(String, nullable=False, unique=True, index=True)
-    password_hash = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    is_verified = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    last_login = Column(DateTime(timezone=True))
-
-    # User preferences stored as JSONB
-    preferences = Column(JSONB, default=dict)  # Theme, default format, etc.
-
-    # Relationship to decks
-    decks = relationship("Deck", back_populates="owner")
-
-    __table_args__ = (
-        Index('idx_users_email', email),
-        Index('idx_users_username', username),
-    )
