@@ -3,7 +3,67 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+# -----------------------------------------
+# User Resources Schemas
+# -----------------------------------------
+
+class WildcardRarity(str, Enum):
+    """Enum for wildcard rarities."""
+    COMMON = "common"
+    UNCOMMON = "uncommon"
+    RARE = "rare"
+    MYTHIC = "mythic"
+
+
+class UserResourcesBase(BaseModel):
+    """Base schema for user resources."""
+    common_wildcards: int = Field(default=0, ge=0)
+    uncommon_wildcards: int = Field(default=0, ge=0)
+    rare_wildcards: int = Field(default=0, ge=0)
+    mythic_wildcards: int = Field(default=0, ge=0)
+    gold: int = Field(default=0, ge=0)
+    gems: int = Field(default=0, ge=0)
+
+
+class UserResourcesCreate(UserResourcesBase):
+    """Schema for creating user resources."""
+    user_id: str
+
+
+class UserResourcesUpdate(BaseModel):
+    """Schema for updating user resources (all fields optional)."""
+    common_wildcards: Optional[int] = Field(None, ge=0)
+    uncommon_wildcards: Optional[int] = Field(None, ge=0)
+    rare_wildcards: Optional[int] = Field(None, ge=0)
+    mythic_wildcards: Optional[int] = Field(None, ge=0)
+    gold: Optional[int] = Field(None, ge=0)
+    gems: Optional[int] = Field(None, ge=0)
+
+
+class UserResourcesResponse(UserResourcesBase):
+    """Response schema for user resources."""
+    id: int
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class WildcardUpdate(BaseModel):
+    """Schema for updating a specific wildcard."""
+    rarity: WildcardRarity
+    amount: int = Field(ge=0)
+
+
+class CurrencyUpdate(BaseModel):
+    """Schema for updating currency."""
+    gold: Optional[int] = Field(None, ge=0)
+    gems: Optional[int] = Field(None, ge=0)
 
 
 
@@ -84,6 +144,23 @@ class CardBase(BaseModel):
     # Optional fields for additional functionality
     role: Optional[CardRole] = None  # Can be assigned based on card analysis
 
+    @field_validator('quantity')
+    @classmethod
+    def validate_quantity(cls, v):
+        """Validate that quantity is positive."""
+        if v <= 0:
+            raise ValueError('Card quantity must be positive')
+        return v
+
+    @field_validator('color_identity')
+    @classmethod
+    def validate_color_identity(cls, v):
+        """Validate that color identity contains valid MTG colors."""
+        valid_colors = {'W', 'U', 'B', 'R', 'G'}
+        if v and not all(color in valid_colors for color in v):
+            raise ValueError('Invalid color in color_identity')
+        return v
+
     class Config:
         use_enum_values = True
 
@@ -112,8 +189,9 @@ class DeckRequirements(BaseModel):
     budget_limit: Optional[float] = None
     constraints: Optional[str] = None
 
-    @validator('colors')
-    def validate_colors(cls, v):  # pylint: disable=no-self-argument
+    @field_validator('colors')
+    @classmethod
+    def validate_colors(cls, v):
         """Validate that colors are valid MTG color codes."""
         valid_colors = {'W', 'U', 'B', 'R', 'G'}
         if not all(color in valid_colors for color in v):
@@ -149,6 +227,31 @@ class CardCreate(BaseModel):
     card_faces: Optional[Dict] = None
     back_image_uri: Optional[str] = None
 
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        """Validate that card name is not empty."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Card name cannot be empty')
+        return v.strip()
+
+    @field_validator('color_identity')
+    @classmethod
+    def validate_color_identity(cls, v):
+        """Validate that color identity contains valid MTG colors."""
+        valid_colors = {'W', 'U', 'B', 'R', 'G'}
+        if v and not all(color in valid_colors for color in v):
+            raise ValueError('Invalid color in color_identity. Must be one of: W, U, B, R, G')
+        return v
+
+    @field_validator('cmc')
+    @classmethod
+    def validate_cmc(cls, v):
+        """Validate that CMC is non-negative."""
+        if v < 0:
+            raise ValueError('Converted mana cost (CMC) cannot be negative')
+        return v
+
 
 class CardResponse(CardBase):
     """Response schema for card information, used for API responses."""
@@ -162,7 +265,7 @@ class CardResponse(CardBase):
     layout: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class DeckBase(BaseModel):
@@ -186,6 +289,85 @@ class DeckBase(BaseModel):
 
     statistics: Optional[DeckStatistics] = None
     total_cards: int = Field(default=60)
+
+    @field_validator('colors')
+    @classmethod
+    def validate_colors(cls, v):
+        """Validate that colors are valid MTG color codes."""
+        valid_colors = {'W', 'U', 'B', 'R', 'G'}
+        if not all(color in valid_colors for color in v):
+            raise ValueError('Invalid color code. Must be one of: W, U, B, R, G')
+        return v
+
+    def _is_basic_land(self, card_name: str, all_cards: List[CardBase]) -> bool:
+        """Check if a card is a basic land."""
+        basic_land_names = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
+        if card_name in basic_land_names:
+            return True
+
+        # Check type_line for "Basic Land"
+        for card in all_cards:
+            if card.name == card_name:
+                return 'Basic Land' in card.type_line
+        return False
+
+    def _validate_card_quantities(self, all_mainboard: List[CardBase]) -> None:
+        """Validate card quantity limits (max 4 except basic lands)."""
+        card_counts = {}
+        for card in all_mainboard:
+            card_counts[card.name] = card_counts.get(card.name, 0) + card.quantity
+
+        for card_name, quantity in card_counts.items():
+            if quantity > 4 and not self._is_basic_land(card_name, all_mainboard):
+                raise ValueError(
+                    f"Too many copies of '{card_name}' ({quantity}). "
+                    f"Maximum 4 copies allowed (except basic lands)"
+                )
+
+    def _validate_color_identity(self, cards: List[CardBase], deck_colors: List[str]) -> None:
+        """Validate that all cards match deck color identity."""
+        if not deck_colors:
+            return
+
+        deck_color_set = set(deck_colors)
+        for card in cards:
+            if card.color_identity:
+                card_color_set = set(card.color_identity)
+                if not card_color_set.issubset(deck_color_set):
+                    raise ValueError(
+                        f"Card '{card.name}' has colors {card.color_identity} "
+                        f"that are not in deck colors {deck_colors}"
+                    )
+
+    @model_validator(mode='after')
+    def validate_deck_rules(self):
+        """Validate deck according to MTG rules."""
+        all_mainboard = self.main_deck + self.lands
+
+        # 1. Deck size validation (minimum 60 cards)
+        total_mainboard = sum(card.quantity for card in all_mainboard)
+        if total_mainboard < 60:
+            raise ValueError(
+                f"Deck must have at least 60 cards in mainboard (currently {total_mainboard})"
+            )
+
+        # 2. Card quantity validation (max 4 except basic lands)
+        self._validate_card_quantities(all_mainboard)
+
+        # 3. Sideboard size validation (max 15 cards)
+        sideboard_total = sum(card.quantity for card in self.sideboard)
+        if sideboard_total > 15:
+            raise ValueError(
+                f"Sideboard must have at most 15 cards (currently {sideboard_total})"
+            )
+
+        # 4. Color identity consistency validation
+        self._validate_color_identity(all_mainboard + self.sideboard, self.colors)
+
+        # Update total_cards
+        self.total_cards = total_mainboard
+
+        return self
 
     def validate_deck(self) -> List[str]:
         """
@@ -227,20 +409,66 @@ class DeckCreate(BaseModel):
     colors: List[str] = []
     strategy_tags: List[str] = []
 
-    @validator('name')
-    def validate_name(cls, v):  # pylint: disable=no-self-argument
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
         """Validate that deck name is not empty."""
         if not v or len(v.strip()) == 0:
             raise ValueError('Deck name cannot be empty')
         return v.strip()
 
-    @validator('colors')
-    def validate_colors(cls, v):  # pylint: disable=no-self-argument
+    @field_validator('colors')
+    @classmethod
+    def validate_colors(cls, v):
         """Validate that colors are valid MTG color codes."""
         valid_colors = {'W', 'U', 'B', 'R', 'G'}
         if not all(color in valid_colors for color in v):
-            raise ValueError('Invalid color code')
+            raise ValueError('Invalid color code. Must be one of: W, U, B, R, G')
         return v
+
+    @field_validator('mainboard')
+    @classmethod
+    def validate_mainboard_quantities(cls, v):
+        """Validate that mainboard quantities are positive."""
+        for card_id, quantity in v.items():
+            if quantity <= 0:
+                raise ValueError(f"Card quantity must be positive for card {card_id}")
+        return v
+
+    @field_validator('sideboard')
+    @classmethod
+    def validate_sideboard_quantities(cls, v):
+        """Validate that sideboard quantities are positive."""
+        for card_id, quantity in v.items():
+            if quantity <= 0:
+                raise ValueError(f"Card quantity must be positive for card {card_id}")
+        return v
+
+    @model_validator(mode='after')
+    def validate_deck_creation_rules(self):
+        """Validate deck creation according to MTG rules."""
+        mainboard = self.mainboard
+        sideboard = self.sideboard
+
+        # 1. Validate mainboard size (minimum 60 cards)
+        mainboard_total = sum(mainboard.values())
+        if mainboard_total < 60:
+            raise ValueError(
+                f"Mainboard must have at least 60 cards (currently {mainboard_total})"
+            )
+
+        # 2. Validate sideboard size (maximum 15 cards)
+        sideboard_total = sum(sideboard.values())
+        if sideboard_total > 15:
+            raise ValueError(
+                f"Sideboard must have at most 15 cards (currently {sideboard_total})"
+            )
+
+        # Note: Card-specific validations (max 4 copies, basic lands, color identity)
+        # require card data lookup and are handled at the service/API layer
+        # These validators focus on structural constraints
+
+        return self
 
 
 class DeckResponse(BaseModel):
@@ -264,7 +492,36 @@ class DeckResponse(BaseModel):
     strategy_tags: List[str] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+    def _create_card_base(self, card: 'Card', quantity: int) -> CardBase:
+        """
+        Helper method to create a CardBase object from a Card.
+
+        Args:
+            card: The Card object from database
+            quantity: The quantity of this card
+
+        Returns:
+            CardBase object
+        """
+        return CardBase(
+            id=card.id,
+            name=card.name,
+            mana_cost=card.mana_cost,
+            cmc=card.cmc,
+            color_identity=card.color_identity or [],
+            quantity=quantity,
+            type_line=card.type_line,
+            oracle_text=card.oracle_text or "",
+            power=card.power,
+            toughness=card.toughness,
+            loyalty=card.loyalty,
+            rarity=card.rarity,
+            set_code=card.set_code,
+            image_uri=card.image_uri,
+            keywords=card.keywords or []
+        )
 
     def to_deck_base(self, card_lookup: Dict[str, 'Card']) -> DeckBase:
         """
@@ -283,53 +540,25 @@ class DeckResponse(BaseModel):
         # Process mainboard
         for card_id, quantity in self.mainboard.items():
             card = card_lookup.get(card_id)
-            if card:
-                card_base = CardBase(
-                    id=card.id,
-                    name=card.name,
-                    mana_cost=card.mana_cost,
-                    cmc=card.cmc,
-                    color_identity=card.color_identity or [],
-                    quantity=quantity,
-                    type_line=card.type_line,
-                    oracle_text=card.oracle_text or "",
-                    power=card.power,
-                    toughness=card.toughness,
-                    loyalty=card.loyalty,
-                    rarity=card.rarity,
-                    set_code=card.set_code,
-                    image_uri=card.image_uri,
-                    keywords=card.keywords or []
-                )
+            if not card:
+                continue
 
-                # Separate lands from non-lands
-                if 'Land' in card.type_line:
-                    land_cards.append(card_base)
-                else:
-                    main_deck_cards.append(card_base)
+            card_base = self._create_card_base(card, quantity)
+
+            # Separate lands from non-lands
+            if 'Land' in card.type_line:
+                land_cards.append(card_base)
+            else:
+                main_deck_cards.append(card_base)
 
         # Process sideboard
         for card_id, quantity in self.sideboard.items():
             card = card_lookup.get(card_id)
-            if card:
-                card_base = CardBase(
-                    id=card.id,
-                    name=card.name,
-                    mana_cost=card.mana_cost,
-                    cmc=card.cmc,
-                    color_identity=card.color_identity or [],
-                    quantity=quantity,
-                    type_line=card.type_line,
-                    oracle_text=card.oracle_text or "",
-                    power=card.power,
-                    toughness=card.toughness,
-                    loyalty=card.loyalty,
-                    rarity=card.rarity,
-                    set_code=card.set_code,
-                    image_uri=card.image_uri,
-                    keywords=card.keywords or []
-                )
-                sideboard_cards.append(card_base)
+            if not card:
+                continue
+
+            card_base = self._create_card_base(card, quantity)
+            sideboard_cards.append(card_base)
 
         return DeckBase(
             name=self.name,

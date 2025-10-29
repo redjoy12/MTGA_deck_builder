@@ -28,6 +28,7 @@ from app.agents.deck_optimizer_agent import DeckOptimizerAgent
 from app.agents.final_review_agent import FinalReviewerAgent
 from app.agents.strategy_agent import StrategyAgent
 from app.routes import auth
+from app.api.routes import user_resources
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
 
@@ -46,8 +47,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include authentication routes
+# Include routers
 app.include_router(auth.router)
+app.include_router(user_resources.router)
 
 # -----------------------------------------
 # Helper Functions
@@ -175,7 +177,7 @@ async def health_check():
 def create_deck(
     deck: DeckCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)  # pylint: disable=unused-argument
 ):
     """
     Create a new deck with specified attributes.
@@ -282,7 +284,7 @@ def update_deck(
     deck_id: int,
     deck: DeckCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)  # pylint: disable=unused-argument
 ):
     """
     Update an existing deck.
@@ -335,7 +337,7 @@ def update_deck(
 def delete_deck(
     deck_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)  # pylint: disable=unused-argument
 ):
     """
     Delete a deck by its ID.
@@ -581,7 +583,7 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
 async def generate_deck(
     requirements: DeckRequirements,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)  # pylint: disable=unused-argument
 ):
     """
     Generate a new deck using AI agents based on specified requirements.
@@ -661,7 +663,7 @@ async def generate_deck(
 @app.post("/api/decks/build", tags=["Deck Building"])
 async def build_deck_workflow(
     requirements: DeckRequirements,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)  # pylint: disable=unused-argument
 ):
     """
     Start a deck building workflow and return the deck building process status.
