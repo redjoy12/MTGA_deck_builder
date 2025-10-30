@@ -8,15 +8,15 @@ langgraph
 langchain-groq
 
 # Database
-sqlalchemy==2.0.27
-alembic==1.13.1
+sqlalchemy
+alembic
 psycopg2
 
 # Utils
-pydantic==2.6.1
+pydantic
 pydantic-settings
-python-jose==3.4.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.18
+python-jose
+passlib[bcrypt]
+python-multipart
 asyncpg
 email-validator

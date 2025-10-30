@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, Inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, retry, tap, switchMap, map } from 'rxjs/operators';
+import { isPlatformBrowser } from '@angular/common';
 
 // Import environment
 import { environment } from '../../../environments/environment';
@@ -52,10 +53,44 @@ export class AuthService {
     map(state => state.user)
   );
 
-  constructor(private http: HttpClient) {
-    // Load auth state from local storage on initialization
-    const storedToken = localStorage.getItem('access_token');
-    const storedUser = localStorage.getItem('currentUser');
+  private getFromLocalStorage(key: string): string | null {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private setInLocalStorage(key: string, value: string): void {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // ignore write errors
+      }
+    }
+  }
+
+  private removeFromLocalStorage(key: string): void {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // ignore remove errors
+      }
+    }
+  }
+
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    // Load auth state from local storage on initialization (browser-only)
+    const storedToken = this.getFromLocalStorage('access_token');
+    const storedUser = this.getFromLocalStorage('currentUser');
 
     if (storedToken && storedUser) {
       try {
@@ -93,8 +128,8 @@ export class AuthService {
       .pipe(
         // After getting the token, fetch user details
         tap(tokenResponse => {
-          // Store token in local storage
-          localStorage.setItem('access_token', tokenResponse.access_token);
+          // Store token in local storage (browser-only)
+          this.setInLocalStorage('access_token', tokenResponse.access_token);
         }),
         // Switch to fetch user details with the token
         switchMap(tokenResponse => {
@@ -106,10 +141,10 @@ export class AuthService {
           return this.http.get<User>(`${this.apiUrl}/me`);
         }),
         tap(user => {
-          // Store user details in local storage
-          localStorage.setItem('currentUser', JSON.stringify(user));
+          // Store user details in local storage (browser-only)
+          this.setInLocalStorage('currentUser', JSON.stringify(user));
           // Update auth state with both user and token
-          const token = localStorage.getItem('access_token')!;
+          const token = this.authStateSubject.value.token;
           this.authStateSubject.next({ user, token });
         }),
         catchError((error) => {
@@ -168,14 +203,14 @@ export class AuthService {
 
   // Clear all authentication data
   private clearAuthData(): void {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('access_token');
+    this.removeFromLocalStorage('currentUser');
+    this.removeFromLocalStorage('access_token');
     this.authStateSubject.next({ user: null, token: null });
   }
 
   // Verify token with backend
   verifyToken(): Observable<User> {
-    const token = localStorage.getItem('access_token');
+    const token = this.getFromLocalStorage('access_token') ?? this.authStateSubject.value.token;
     if (!token) {
       this.clearAuthData();
       return throwError(() => ({
@@ -189,7 +224,7 @@ export class AuthService {
       .pipe(
         retry(1),
         tap(user => {
-          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.setInLocalStorage('currentUser', JSON.stringify(user));
           this.authStateSubject.next({ user, token });
         }),
         catchError((error) => {

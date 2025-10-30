@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of } from 'rxjs';
 import { map, catchError, switchMap } from 'rxjs/operators';
@@ -7,8 +7,10 @@ import * as CardActions from './card.actions';
 
 @Injectable()
 export class CardEffects {
+  private readonly injectedActions = inject(Actions, { optional: true });
+  private readonly actions$: Actions = this.injectedActions ?? new Actions(of());
+
   constructor(
-    private actions$: Actions,
     private cardService: CardService
   ) {}
 
