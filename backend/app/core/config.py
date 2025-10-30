@@ -4,7 +4,7 @@ import sys
 from functools import lru_cache
 from typing import Optional
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
@@ -43,11 +43,11 @@ class Settings(BaseSettings):
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    class Config:
-        """Pydantic configuration for Settings."""
-        env_file = ".env"
-        case_sensitive = True
-        extra = "allow"  # This allows extra fields from the environment
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="allow"  # This allows extra fields from the environment
+    )
 
 
 @lru_cache
@@ -56,4 +56,3 @@ def get_settings() -> Settings:
     return Settings()
 
 settings = get_settings()
-print(settings.get_database_url)

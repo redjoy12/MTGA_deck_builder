@@ -50,8 +50,7 @@ class UserResourcesResponse(UserResourcesBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class WildcardUpdate(BaseModel):
@@ -161,8 +160,7 @@ class CardBase(BaseModel):
             raise ValueError('Invalid color in color_identity')
         return v
 
-    class Config:
-        use_enum_values = True
+    model_config = {"use_enum_values": True}
 
 class DeckStatistics(BaseModel):
     """Holds statistics for a deck, including color distribution and mana curve."""
