@@ -1,9 +1,9 @@
 """Main FastAPI application for MTGA AI Deck Builder."""
 import json
+import logging
 from typing import Optional, List
 
 import uvicorn
-import logging
 
 from fastapi import (
     Depends, FastAPI, HTTPException, status,
@@ -55,8 +55,18 @@ app.include_router(user_resources.router)
 
 # Global exception handler to ensure JSON error responses
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
-    logging.getLogger(__name__).error(f"Unhandled exception: {exc}", exc_info=True)
+async def unhandled_exception_handler(_request: Request, exc: Exception):
+    """
+    Handle unhandled exceptions and return JSON error responses.
+
+    Args:
+        _request (Request): The incoming request (unused but required by FastAPI).
+        exc (Exception): The exception that was raised.
+
+    Returns:
+        JSONResponse: A JSON response with error details.
+    """
+    logging.getLogger(__name__).error("Unhandled exception: %s", exc, exc_info=True)
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error"}
