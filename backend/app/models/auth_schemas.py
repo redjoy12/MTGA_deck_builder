@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserBase(BaseModel):
@@ -15,8 +15,9 @@ class UserCreate(UserBase):
     """Schema for creating a new user."""
     password: str = Field(..., min_length=8, max_length=100)
 
-    @validator('password')
-    def validate_password(cls, v):  # pylint: disable=no-self-argument
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
         """Validate password strength."""
         if not any(char.isdigit() for char in v):
             raise ValueError('Password must contain at least one digit')
@@ -39,8 +40,7 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class Token(BaseModel):

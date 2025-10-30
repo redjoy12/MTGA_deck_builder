@@ -17,6 +17,4 @@ class AgentState(BaseModel):
     iteration: int = 0
     max_iterations: int = 5
 
-    class Config:
-        """Pydantic configuration for AgentState."""
-        arbitrary_types_allowed = True
+    model_config = {"arbitrary_types_allowed": True}
