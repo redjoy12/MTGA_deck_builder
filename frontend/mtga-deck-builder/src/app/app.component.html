@@ -1,37 +1,48 @@
 
 <div class="app-container">
-  <header>
-    <nav>
-      <ul>
-        <li>
-          <a routerLink="/deck-creator" routerLinkActive="active">
-            Deck Creator
-          </a>
-        </li>
-        <li>
-          <a routerLink="/card-selector" routerLinkActive="active">
-            Card Selector
-          </a>
-        </li>
-        <li>
-          <a routerLink="/deck-preview" routerLinkActive="active">
-            Deck Preview
-          </a>
-        </li>
-        <li>
-          <a routerLink="/resource-manager" routerLinkActive="active">
-            Resource Manager
-          </a>
-        </li>
-      </ul>
-    </nav>
+  <!-- Header: Only show when authenticated -->
+  <header *ngIf="isAuthenticated$ | async">
+    <div class="header-content">
+      <div class="brand">
+        <h1>{{ title }}</h1>
+      </div>
+      <nav>
+        <ul>
+          <li>
+            <a routerLink="/deck-creator" routerLinkActive="active">
+              Deck Creator
+            </a>
+          </li>
+          <li>
+            <a routerLink="/card-selector" routerLinkActive="active">
+              Card Selector
+            </a>
+          </li>
+          <li>
+            <a routerLink="/deck-preview" routerLinkActive="active">
+              Deck Preview
+            </a>
+          </li>
+          <li>
+            <a routerLink="/resource-manager" routerLinkActive="active">
+              Resource Manager
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="user-menu">
+        <span class="username">{{ username$ | async }}</span>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+    </div>
   </header>
 
   <main>
     <router-outlet></router-outlet>
   </main>
 
-  <footer>
+  <!-- Footer: Only show when authenticated -->
+  <footer *ngIf="isAuthenticated$ | async">
     <p>&copy; {{ currentYear }} MTGA Deck Builder</p>
   </footer>
 </div>

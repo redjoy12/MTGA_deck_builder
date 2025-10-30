@@ -1,42 +1,118 @@
 // app.component.scss
 .app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  background-color: #2A2A3E;
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  .header-content {
     display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1400px;
+    margin: 0 auto;
+    gap: 2rem;
   }
-  
-  header {
-    background-color: #333;
-    color: white;
-    padding: 1rem;
+
+  .brand {
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4A90E2;
+      white-space: nowrap;
+    }
   }
-  
+
   nav {
+    flex: 1;
+
     ul {
       display: flex;
       list-style: none;
-      gap: 1rem;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+      justify-content: center;
     }
-  
+
+    li {
+      margin: 0;
+    }
+
     a {
-      color: white;
+      color: #B0B0C0;
       text-decoration: none;
-  
+      font-weight: 500;
+      transition: color 0.2s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+
+      &:hover {
+        color: white;
+        background-color: rgba(74, 144, 226, 0.1);
+      }
+
       &.active {
+        color: white;
+        background-color: #4A90E2;
         font-weight: bold;
-        text-decoration: underline;
       }
     }
   }
-  
-  main {
-    flex-grow: 1;
-    padding: 1rem;
+
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    white-space: nowrap;
+
+    .username {
+      color: #B0B0C0;
+      font-weight: 500;
+    }
+
+    .logout-btn {
+      padding: 0.5rem 1rem;
+      background-color: #FF4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #CC0000;
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+    }
   }
-  
-  footer {
-    background-color: #333;
-    color: white;
-    text-align: center;
-    padding: 1rem;
+}
+
+main {
+  flex-grow: 1;
+  padding: 2rem;
+  background-color: #1E1E2C;
+}
+
+footer {
+  background-color: #2A2A3E;
+  color: #B0B0C0;
+  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid #333;
+
+  p {
+    margin: 0;
   }
+}
